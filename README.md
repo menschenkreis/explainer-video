@@ -17,6 +17,20 @@ voice can never drift. Export to MP4, publish as a free study website, or just p
 * **Study website** – `ev site` builds a free static site: player, MP4/MP3 download, chapters, transcript, self-tests and flashcards. No login, no tracking.
 * **Works as a Claude Code skill** – ask Claude: *“Use the explainer-video skill to make a video from chapter 3 of this PDF.”*
 
+
+> ### 🤖 Using an AI agent? Paste this
+> ```text
+> Set up and use the "explainer-video" skill for me.
+> 1. Install it: git clone https://github.com/menschenkreis/explainer-video ~/explainer-video && ~/explainer-video/install.sh
+>    then run `ev doctor` and help me fix anything it flags.
+> 2. Read ~/explainer-video/SKILL.md and follow its workflow.
+> 3. Start with the learntype brainstorm: interview me about HOW I learn and which analogies I understand, then save my profile.
+> 4. Ingest my material, synthesise a curriculum for MY profile, and wait for my approval before anything costs money.
+> Rules: never ask me to paste my ElevenLabs key into chat (tell me to run `ev key` myself); show `ev narrate --dry-run` cost and wait
+> for my OK; test the voice on one scene first; never publish anything without asking; paraphrase sources, don't copy them.
+> ```
+> More prompts (already installed, single video): [AGENT_PROMPT.md](AGENT_PROMPT.md).
+
 ## Quick start (2 minutes, no API key)
 ```bash
 git clone https://github.com/menschenkreis/explainer-video ~/explainer-video && cd ~/explainer-video
