@@ -119,6 +119,11 @@ def api(method, url, key, body=None):
             return json.load(r)
     except urllib.error.HTTPError as e:
         detail = e.read().decode("utf-8", "replace")[:600]
+        if "quota_exceeded" in detail:
+            sys.exit("ElevenLabs quota exceeded – no credits were spent on this request. Already generated scenes stay cached; "
+                     "top up credits (or wait for the monthly reset) and run the same command again to continue.\n" + detail[:300])
+        if "missing_permissions" in detail:
+            sys.exit("Your ElevenLabs API key lacks a permission (Text to Speech / Voices: Read). Edit the key in the ElevenLabs dashboard.\n" + detail[:300])
         sys.exit(f"ElevenLabs HTTP {e.code}: {detail}")
 
 
