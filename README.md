@@ -1,12 +1,14 @@
 # explainer-video
 
-**Turn a book chapter, PDF or your own notes into a narrated explainer video – built as code, not generated.**
+**Drop in your material. Tell it how you learn. Get a personal course of narrated explainer videos – built as code, not generated.**
 Animated diagrams (HTML/SVG/CSS) are locked word-for-word to an [ElevenLabs](https://elevenlabs.io) voice-over, so picture and
 voice can never drift. Export to MP4, publish as a free study website, or just play it in the browser.
 
 ![flow diagram scene](docs/images/demo-flow.png)
 ![analogy scene](docs/images/demo-analogy.png)
 
+* **Learns *you* first** – a short *learntype brainstorm* (how do you learn? which analogies click?) produces a learner profile that drives curriculum order, depth, pace, humour, voice, examples and mnemonics.
+* **Synthesises a curriculum** from a pile of PDFs, Word, slides and notes, with a review gate before anything is narrated.
 * **Timed to the word** – write `[cue]` in your script; the animation tagged `data-at="cue"` fires exactly when that word is spoken.
 * **Real voice acting** – Eleven v3 audio tags (`{excited}`, `{whispers}`, `{laughs}`, …) for a YouTube-explainer feel, not a monotone reader.
 * **No video generation** – every frame is drawn by code, so it is deterministic, tiny (a 9-minute video ≈ 70 KB HTML + 10 MB audio), editable and free to re-render.
@@ -31,7 +33,19 @@ ev narrate examples/rainbow --dry-run  # shows how many characters it will use �
 ev all examples/rainbow                # narrate + build + export video.mp4
 ```
 
-## Make your own video
+## The personalised course workflow
+```bash
+ev profile my-course                       # learntype brainstorm (or let Claude run the richer conversational version)
+ev ingest ~/Downloads/course-material --out my-course     # PDFs, docx, pptx, md, html → page-marked text + inventory
+# Claude (or you) synthesises my-course/curriculum.json from the sources + profile  → references/curriculum-synthesis.md
+ev plan my-course/curriculum.json          # validates, shows the time budget; review it, then:
+ev plan my-course/curriculum.json --scaffold   # one project per video + site.json
+# …write/build each video (below), then:
+ev site my-course/site.json                # free study website
+```
+In Claude Code just say: *“Use the explainer-video skill. Here is my material in ~/Downloads/course-material – start with the learntype session.”*
+
+## Make a single video
 ```bash
 ev new videos/my-topic "My Topic"      # scaffold script.md + a sample scene
 ev extract book.pdf --pages 40-62 -o videos/my-topic/build/source.txt   # optional: get chapter text from a PDF

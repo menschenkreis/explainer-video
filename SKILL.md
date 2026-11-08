@@ -1,8 +1,25 @@
 ---
 name: explainer-video
-description: Build narrated explainer videos as CODE (HTML/CSS/JS timeline locked to an ElevenLabs voice-over) from study material such as a PDF chapter, script or notes. No AI video generation. Use when the user wants explainer / learning / lecture videos with animated diagrams that are timed to narration, or says "code the video", "make an explainer from this chapter", "video from the PDF". Output is one self-contained index.html (plus narration.mp3) that plays in any browser and can be exported to MP4.
+description: Personalised course generator. Learner drops in material (PDFs, docs, slides, notes); the skill first runs a short "learntype brainstorm" (how do you learn, which analogies click?), synthesises a curriculum tailored to that profile, then builds each video as CODE – animated HTML/SVG diagrams timed word-for-word to an ElevenLabs voice-over – with MP4 export and a free static study website (transcripts, self-tests, flashcards). No AI video generation. Use when the user wants explainer / learning / lecture videos, a study course from their material, "video from this chapter/PDF", "teach me this the way I learn", or says "learntype".
 ---
 
+# explainer-video – a personal course from a pile of material
+
+```
+ 0 LEARNTYPE SESSION   how do you learn? which analogies click?        → learner-profile.json / .md      (references/learntype-session.md)
+ 1 INGEST              drop in PDFs / docx / pptx / md / html           → sources/*.txt + inventory.json  (ev ingest)
+ 2 CURRICULUM          synthesise a plan for THIS learner               → curriculum.json                 (references/curriculum-synthesis.md, ev plan)
+ 3 REVIEW GATE         learner approves outline, length, what was cut   (nothing is narrated before this)
+ 4 PRODUCE             per video: script → scenes → preview → narrate → MP4   (sections below)
+ 5 STUDY SITE          transcripts, self-tests, flashcards, MP4 download     (ev site)
+ 6 FEEDBACK            "which analogy landed?" → refine the profile, adjust the next videos
+```
+**Always start with step 0 unless a `learner-profile.json` already exists** (offer to refresh it). Run it as a friendly conversation
+(`AskUserQuestion` for choices), including the *analogy calibration test*: the same concept explained through 3 of the learner's worlds,
+they pick what clicked. In a plain terminal: `ev profile <dir>`. Every later choice must follow the profile – analogy domain, running example,
+humour, voice energy, pace, depth, mnemonic style, practice type, video length. Never use an analogy domain the learner marked "avoid"/"loser".
+
+For a single video without a course, skip steps 1–3 and go to "One-time setup" / "Workflow" below.
 # explainer-video
 
 Videos are **coded, not generated**. A scene is HTML/SVG/CSS; one deterministic function `render(t)` draws

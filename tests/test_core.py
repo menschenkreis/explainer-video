@@ -55,6 +55,20 @@ class Pipeline(unittest.TestCase):
         dur = float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(p / "narration.mp3")]))
         self.assertAlmostEqual(dur, t["duration"], delta=0.25)
 
+    def test_ingest_and_plan(self):
+        import zipfile
+        d = Path(tempfile.mkdtemp()); (d / "in").mkdir(); (d / "in/n.md").write_text("# 1 Intro\nHello world.\n")
+        with zipfile.ZipFile(d / "in/a.docx", "w") as z:
+            z.writestr("word/document.xml", '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>Docx text</w:t></w:r></w:p></w:body></w:document>')
+        r = self.run_py("ingest.py", str(d / "in"), "--out", str(d)); self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(len(json.loads((d / "sources/inventory.json").read_text())["files"]), 2)
+        (d / "learner-profile.json").write_text(json.dumps({"language": "de", "session_minutes": 8, "style": {"voice_energy": "lively"}, "analogy": {"avoid": ["cooking"]}}))
+        (d / "curriculum.json").write_text(json.dumps({"title": "T", "language": "de", "modules": [{"id": "m", "title": "M", "videos": [
+            {"slug": "v1", "title": "V1", "objectives": ["x"], "analogy": {"domain": "cooking", "idea": "i"}, "est_minutes": 8}]}]}))
+        r = self.run_py("plan.py", str(d / "curriculum.json"), "--scaffold")
+        self.assertIn("avoid list", r.stdout)                       # profile conflict is flagged
+        self.assertTrue((d / "videos/v1/script.md").exists() and (d / "site.json").exists())
+
     def test_site_builds(self):
         p = self.project(); self.run_py("narrate.py", "script.md", "--estimate", cwd=p); self.run_py("build.py", ".", cwd=p)
         d = p.parent; (d / "site.json").write_text(json.dumps({"title": "T", "lang": "en", "courses": [{"id": "c", "title": "C", "videos": [

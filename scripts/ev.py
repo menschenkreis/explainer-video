@@ -5,7 +5,10 @@
   ev setup                        one-time install of the helper venv (pymupdf, playwright)
   ev key                          save your ElevenLabs key (hidden prompt, never echoed)
   ev voices                       list voices of your ElevenLabs account
-  ev new <dir> "Title"            scaffold a project
+  ev profile <dir>                learntype brainstorm: how do YOU learn, which analogies click? (writes learner-profile.json)
+  ev ingest <files|folders…> [--out DIR]   drop in your material (pdf, docx, pptx, md, txt, html) → page-marked text + inventory
+  ev plan <curriculum.json> [--scaffold]   validate the personalised curriculum, show the time budget, create one project per video
+  ev new <dir> "Title"            scaffold a single project
   ev extract <pdf> --pages 10-30  pull chapter text out of a PDF (-o out.txt)
   ev preview <dir>                estimate timing + build + open in browser (no credits)
   ev narrate <dir> [--dry-run] [--only id,id]   ElevenLabs narration (cached per scene)
@@ -91,6 +94,9 @@ def main():
     if c == "key": return save_key()
     if c == "voices": return py("narrate.py", ["--list-voices"])
     if c == "new": return py("new_project.py", a)
+    if c == "profile": return py("profile.py", a)
+    if c == "ingest": return py("ingest.py", a, venv=True)
+    if c == "plan": return py("plan.py", a)
     if c == "extract": return py("extract_chapter.py", a, venv=True)
     if c == "site": return py("site_build.py", a)
     d, rest = need_dir(a)
