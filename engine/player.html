@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="{{LANG}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{TITLE}}</title>
+<style>{{THEME}}</style>
+<style>{{PROJECT_CSS}}</style>
+</head>
+<body>
+<div id="stage">
+  <div id="rail"></div>
+{{SCENES}}
+  <div id="caption"></div>
+</div>
+<div id="ui">
+  <button id="pp" title="Space">▶</button>
+  <input id="scrub" type="range" min="0" max="1000" value="0">
+  <span id="time">0:00</span>
+  <select id="jump" title="Szene / scene"></select>
+  <button id="cc" title="c">CC</button>
+  <select id="rate"><option>0.75</option><option selected>1</option><option>1.25</option><option>1.5</option><option>2</option></select>
+  {{DL_BTN}}
+  <button id="fs" title="f">⛶</button>
+</div>
+<button id="start">▶ Video starten</button>
+<audio id="narration" {{AUDIO_ATTR}} preload="auto"></audio>
+<script>window.TIMING={{TIMING_JSON}};</script>
+<script>{{ENGINE}}</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<section class="scene" data-scene="light" data-part="Optics">
+  <div class="head"><span class="kick" data-at="@start+0.2" data-fx="pop">Physics</span><h2 data-at="@start+0.3" data-fx="rise">How a rainbow forms</h2></div>
+  <div class="body">
+    <div class="graph abs" style="left:0;top:40px;width:1728px;height:420px">
+      <svg class="edges">
+        <g class="edge ca" data-edge="rb-sun>rb-drop" data-at="drop-0.6"></g>
+        <g class="edge cb" data-edge="rb-drop>rb-eye" data-at="eye-0.6"></g>
+      </svg>
+      <div class="node ca" id="rb-sun" style="left:60px;top:130px;width:360px;height:120px;font-size:36px" data-at="sun" data-fx="pop">White sunlight</div>
+      <div class="node cc" id="rb-drop" style="left:690px;top:130px;width:360px;height:120px;font-size:36px" data-at="drop" data-fx="pop"><div>Raindrop<br><span class="xs mute">bends · reflects · bends</span></div></div>
+      <div class="node cb" id="rb-eye" style="left:1320px;top:130px;width:360px;height:120px;font-size:36px" data-at="eye" data-fx="pop">Your eye</div>
+    </div>
+    <div class="abs" style="left:60px;top:430px;width:1608px;height:90px;border-radius:45px;background:linear-gradient(90deg,#ff4d4d,#ff9f43,#ffe14d,#4cd964,#4da6ff,#5b5bd6,#a45be8)" data-at="spectrum" data-fx="wipe" data-dur="2.2"></div>
+    <div class="abs sm mute" style="left:60px;top:540px;width:1608px;display:flex;justify-content:space-between;font-size:26px" data-at="spectrum+1.2" data-fx="fade"><span>red – bends least</span><span>violet – bends most</span></div>
+  </div>
+</section>

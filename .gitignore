@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+*.mp4
+*.mp3
+build/
+examples/*/index.html
+site/
+.DS_Store
