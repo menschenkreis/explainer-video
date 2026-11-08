@@ -17,7 +17,7 @@ voice can never drift. Export to MP4, publish as a free study website, or just p
 
 ## Quick start (2 minutes, no API key)
 ```bash
-git clone https://github.com/<you>/explainer-video ~/explainer-video && cd ~/explainer-video
+git clone https://github.com/menschenkreis/explainer-video ~/explainer-video && cd ~/explainer-video
 ./install.sh                           # links it as a Claude Code skill, adds the `ev` command, sets up helpers
 ev preview examples/rainbow            # builds the demo with estimated timing and opens it in your browser
 ```
