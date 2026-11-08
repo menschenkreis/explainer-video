@@ -24,6 +24,9 @@ Group concepts into videos of the target length. For every video write (this goe
 `slug`, `title`, `objectives` (3 verbs: “explain…”, “apply…”), `source_refs` (file + pages), `concepts`, `analogy` (domain from the profile winners/likes, and *why it fits*),
 `example` (from the running example), `mnemonic` (style from the profile), `quiz` (3–5 Q/A), `est_minutes`.
 
+## 4b. Study blocks (if the learner has a calendar)
+Group videos by block (`block`: `{id, first_session}`, `ready_by` a few days earlier); see `study-blocks.md`. The calendar and the platform decide *what is taught when*; the sources decide *what the videos say*.
+
 ## 5. Review gate (before any narration credits are spent)
 Show the learner the outline: modules → videos → one-line promise each, total time, what was cut and why. Let them re-order, merge, drop.
 Only then continue.

@@ -8,6 +8,8 @@
   ev profile <dir>                learntype brainstorm: how do YOU learn, which analogies click? (writes learner-profile.json)
   ev ingest <files|folders…> [--out DIR]   drop in your material (pdf, docx, pptx, md, txt, html) → page-marked text + inventory
   ev plan <curriculum.json> [--scaffold]   validate the personalised curriculum, show the time budget, create one project per video
+  ev calendar add <ics-url>       save your study-calendar feed privately (the URL contains a secret token)
+  ev calendar fetch|blocks <dir>  download the feed / group it into study blocks (what is taught when, links to scan)
   ev new <dir> "Title"            scaffold a single project
   ev extract <pdf> --pages 10-30  pull chapter text out of a PDF (-o out.txt)
   ev preview <dir>                estimate timing + build + open in browser (no credits)
@@ -95,6 +97,12 @@ def main():
     if c == "voices": return py("narrate.py", ["--list-voices"])
     if c == "new": return py("new_project.py", a)
     if c == "profile": return py("profile.py", a)
+    if c == "calendar":
+        if not a or a[0] not in ("add", "fetch", "blocks", "file"): sys.exit("usage: ev calendar add <url> | fetch <dir> | blocks <dir> [--days N --past N --gap D --refresh] | file <x.ics> <dir>")
+        sub, rest = a[0], a[1:]
+        if sub == "add": return py("ical.py", ["add", *rest])
+        if sub == "file": return py("ical.py", ["file", rest[0], "--out", rest[1] if len(rest) > 1 else ".", *rest[2:]])
+        return py("ical.py", [sub, "--out", rest[0] if rest and not rest[0].startswith("-") else ".", *(rest[1:] if rest and not rest[0].startswith("-") else rest)])
     if c == "ingest": return py("ingest.py", a, venv=True)
     if c == "plan": return py("plan.py", a)
     if c == "extract": return py("extract_chapter.py", a, venv=True)

@@ -8,3 +8,9 @@ build/
 examples/*/index.html
 site/
 .DS_Store
+
+# private study data
+calendar/
+*.ics
+preparation.json
+sources/

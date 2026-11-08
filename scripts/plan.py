@@ -34,6 +34,13 @@ def main():
             bad = set(prof.get("analogy", {}).get("avoid", []) + prof.get("analogy", {}).get("losers", []))
             if v.get("analogy", {}).get("domain") in bad: problems.append(f"{v['slug']}: analogy domain '{v['analogy']['domain']}' is on the learner's avoid list")
             print(f"  {n:2d}. {v['title']}  ·  {mins} min  ·  ≈{int(mins * cpm)} characters  ·  analogy: {v.get('analogy', {}).get('domain', '–')}")
+    # study-block awareness: videos should be watchable BEFORE the session they prepare for
+    from datetime import date as _d
+    for m in cur["modules"]:
+        for v in m["videos"]:
+            blk = v.get("block") or m.get("block")
+            if isinstance(blk, dict) and blk.get("first_session") and v.get("ready_by") and v["ready_by"] > blk["first_session"]:
+                problems.append(f"{v['slug']}: ready_by {v['ready_by']} is after the first session of its block ({blk['first_session']})")
     print(f"\n{n} videos, {total} min total, {cpm} narrated characters/min for '{lang}'")
     for p in problems: print("  ⚠", p)
     if not a.scaffold:

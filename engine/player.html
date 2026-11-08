@@ -17,13 +17,13 @@
   <button id="pp" title="Space">▶</button>
   <input id="scrub" type="range" min="0" max="1000" value="0">
   <span id="time">0:00</span>
-  <select id="jump" title="Szene / scene"></select>
+  <select id="jump" title="Scene"></select>
   <button id="cc" title="c">CC</button>
   <select id="rate"><option>0.75</option><option selected>1</option><option>1.25</option><option>1.5</option><option>2</option></select>
   {{DL_BTN}}
   <button id="fs" title="f">⛶</button>
 </div>
-<button id="start">▶ Video starten</button>
+<button id="start">{{START}}</button>
 <audio id="narration" {{AUDIO_ATTR}} preload="auto"></audio>
 <script>window.TIMING={{TIMING_JSON}};</script>
 <script>{{ENGINE}}</script>

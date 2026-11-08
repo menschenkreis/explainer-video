@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """ingest.py <file-or-folder>… [--out DIR]  –  turn a pile of source material into page-marked text + an inventory.
 
-Supports: .pdf (needs pymupdf – installed by `ev setup`), .docx, .pptx, .md/.txt, .html/.htm.
+Supports: .pdf (needs pymupdf – installed by `ev setup`), .docx, .pptx, .md/.txt, .html/.htm, .eml (emails), .vtt/.srt (transcripts).
+Images (.png/.jpg/.heic) and audio/voice notes (.m4a/.mp3/.wav) are listed in the inventory with "needs": "vision" / "transcription"
+(the agent describes images; voice notes need a transcript .txt, e.g. from whisper or your phone).
 Writes  <out>/sources/<name>.txt   (with '=== PAGE n ===' / '=== SLIDE n ===' markers)
         <out>/sources/inventory.json   (type, pages, words, headings, reading minutes)
 Then read the texts and follow references/curriculum-synthesis.md.
@@ -47,7 +49,27 @@ def read_text(p):
     return [t], "PAGE"
 
 
-READERS = {".pdf": read_pdf, ".docx": read_docx, ".pptx": read_pptx, ".md": read_text, ".txt": read_text, ".html": read_text, ".htm": read_text}
+def read_eml(p):
+    import email, email.policy
+    m = email.message_from_bytes(Path(p).read_bytes(), policy=email.policy.default)
+    body = m.get_body(preferencelist=("plain", "html"))
+    text = body.get_content() if body else ""
+    if body and body.get_content_type() == "text/html":
+        text = re.sub(r"(?is)<(script|style).*?</\1>", " ", text); text = html.unescape(re.sub(r"<[^>]+>", "\n", text))
+    return [f"From: {m['from']}\nDate: {m['date']}\nSubject: {m['subject']}\n\n{text}"], "MAIL"
+
+
+def read_subs(p):
+    t = Path(p).read_text(encoding="utf-8", errors="replace")
+    t = re.sub(r"(?m)^(WEBVTT.*|\d+|\d{1,2}:\d\d[:.,\d]* --> .*)$", "", t)
+    return [re.sub(r"\n{2,}", "\n", t)], "TRANSCRIPT"
+
+
+NEEDS = {".png": "vision", ".jpg": "vision", ".jpeg": "vision", ".heic": "vision", ".webp": "vision",
+         ".m4a": "transcription", ".mp3": "transcription", ".wav": "transcription", ".aac": "transcription", ".ogg": "transcription"}
+
+
+READERS = {".eml": read_eml, ".vtt": read_subs, ".srt": read_subs, ".pdf": read_pdf, ".docx": read_docx, ".pptx": read_pptx, ".md": read_text, ".txt": read_text, ".html": read_text, ".htm": read_text}
 
 
 def main():
@@ -60,6 +82,11 @@ def main():
     inv = []
     for f in files:
         rd = READERS.get(f.suffix.lower())
+        if f.suffix.lower() in NEEDS and not f.name.startswith("."):      # images / voice notes: cannot be read by this script
+            need = NEEDS[f.suffix.lower()]
+            inv.append({"file": str(f), "text_file": None, "type": f.suffix.lower().lstrip("."), "pages": 0, "words": 0, "read_minutes": 0, "headings": [], "needs": need,
+                        "hint": "look at the image (vision) and write what it shows to sources/<name>.txt" if need == "vision" else "transcribe (e.g. whisper, or your phone's transcript) and save as <name>.txt next to the file, then re-run ingest"})
+            print(f"! {f.name}: needs {need} (see inventory.json 'needs')"); continue
         if not rd or f.name.startswith("."):
             continue
         try:

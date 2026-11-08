@@ -12,6 +12,9 @@ Set up and use the "explainer-video" skill for me.
 2. Read ~/explainer-video/SKILL.md and follow its workflow.
 3. Start with the learntype brainstorm (references/learntype-session.md): interview me about HOW I learn and which analogies I
    understand. One or two questions at a time, include the analogy calibration test, then save learner-profile.json and .md.
+3b. If I have a study calendar (ICS/iCal/OpenOlat link), ask me for it and run `ev calendar add` (treat the URL as a secret: never print or commit it),
+   then `ev calendar blocks`. Follow references/study-blocks.md: scan each block's course page with the browser to find the topic and preparation reading
+   (I sign in myself; never type my credentials), and combine it with books, images, voice-note transcripts and emails I choose to share.
 4. Ask where my material is (PDFs, Word, slides, notes). Ingest it with `ev ingest`, then synthesise a curriculum for MY profile.
    Show me the outline (videos, lengths, what you cut and why) and wait for my approval before anything costs money.
 5. Build each video, check the layout with screenshots, give me a free preview (estimated timing), and iterate with me.

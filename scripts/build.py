@@ -69,6 +69,7 @@ def main():
     out = (tpl.replace("{{LANG}}", timing.get("lang", "de")).replace("{{TITLE}}", timing.get("title") or "Explainer")
            .replace("{{THEME}}", css).replace("{{PROJECT_CSS}}", proj_css)
            .replace("{{SCENES}}", "\n".join(html_scenes)).replace("{{AUDIO_ATTR}}", audio_attr)
+           .replace("{{START}}", {"de": "▶ Video starten", "en": "▶ Start video"}.get(timing.get("lang", "de"), "▶ Start"))
            .replace("{{DL_BTN}}", dl).replace("{{TIMING_JSON}}", json.dumps(timing, ensure_ascii=False)).replace("{{ENGINE}}", js))
     (root / "index.html").write_text(out, encoding="utf-8")
     print(f'index.html written ({len(out)//1024} KB, {len(frags)} scenes, mode={timing["mode"]}, {timing["duration"]/60:.1f} min)')

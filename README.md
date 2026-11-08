@@ -8,6 +8,7 @@ voice can never drift. Export to MP4, publish as a free study website, or just p
 ![analogy scene](docs/images/demo-analogy.png)
 
 * **Learns *you* first** – a short *learntype brainstorm* (how do you learn? which analogies click?) produces a learner profile that drives curriculum order, depth, pace, humour, voice, examples and mnemonics.
+* **Follows your study plan** – connect your calendar (ICS/iCal/OpenOlat feed): the skill works out what each study block is about, scans the course pages with a browser (you sign in) for the preparation reading, and combines books, slides, photos, voice-note transcripts and emails. Videos are ready before each block.
 * **Synthesises a curriculum** from a pile of PDFs, Word, slides and notes, with a review gate before anything is narrated.
 * **Timed to the word** – write `[cue]` in your script; the animation tagged `data-at="cue"` fires exactly when that word is spoken.
 * **Real voice acting** – Eleven v3 audio tags (`{excited}`, `{whispers}`, `{laughs}`, …) for a YouTube-explainer feel, not a monotone reader.
@@ -50,7 +51,9 @@ ev all examples/rainbow                # narrate + build + export video.mp4
 ## The personalised course workflow
 ```bash
 ev profile my-course                       # learntype brainstorm (or let Claude run the richer conversational version)
-ev ingest ~/Downloads/course-material --out my-course     # PDFs, docx, pptx, md, html → page-marked text + inventory
+ev ingest ~/Downloads/course-material --out my-course     # PDFs, docx, pptx, md, html, emails, transcripts → text + inventory
+ev calendar add "<your calendar .ics URL>"  # optional: your study plan (private, never printed or committed)
+ev calendar blocks my-course               # what is taught when, with links to scan for preparation
 # Claude (or you) synthesises my-course/curriculum.json from the sources + profile  → references/curriculum-synthesis.md
 ev plan my-course/curriculum.json          # validates, shows the time budget; review it, then:
 ev plan my-course/curriculum.json --scaffold   # one project per video + site.json

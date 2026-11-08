@@ -69,6 +69,14 @@ class Pipeline(unittest.TestCase):
         self.assertIn("avoid list", r.stdout)                       # profile conflict is flagged
         self.assertTrue((d / "videos/v1/script.md").exists() and (d / "site.json").exists())
 
+    def test_ical_blocks(self):
+        import ical
+        ics = "BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:1\nSUMMARY:Systems Engineering - Jane Doe (CLASS-X SYEN-S2)\nDTSTART;TZID=Europe/Zurich:20261105T171500\nDESCRIPTION:Prep: ch 1\\nhttps://example.org/c/1\nRRULE:FREQ=WEEKLY;COUNT=3\nEND:VEVENT\nBEGIN:VEVENT\nUID:2\nSUMMARY:Projektmanagement (CLASS-X PM-S2)\nDTSTART:20261201T161500Z\nEND:VEVENT\nEND:VCALENDAR\n"
+        ev = ical.parse_ics(ics); self.assertEqual(len(ev), 4)
+        b = ical.blocks(ev); self.assertEqual([(x["course"], x["sessions"]) for x in b], [("Systems Engineering", 3), ("Projektmanagement", 1)])
+        self.assertEqual(b[0]["teachers"], ["Jane Doe"]); self.assertEqual(b[0]["links"], ["https://example.org/c/1"])
+        self.assertNotIn("token", ical.mask("https://host.example/ical/x/123/SECRETTOKEN.ics"))
+
     def test_site_builds(self):
         p = self.project(); self.run_py("narrate.py", "script.md", "--estimate", cwd=p); self.run_py("build.py", ".", cwd=p)
         d = p.parent; (d / "site.json").write_text(json.dumps({"title": "T", "lang": "en", "courses": [{"id": "c", "title": "C", "videos": [

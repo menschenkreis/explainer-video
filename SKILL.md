@@ -7,7 +7,8 @@ description: Personalised course generator. Learner drops in material (PDFs, doc
 
 ```
  0 LEARNTYPE SESSION   how do you learn? which analogies click?        → learner-profile.json / .md      (references/learntype-session.md)
- 1 INGEST              drop in PDFs / docx / pptx / md / html           → sources/*.txt + inventory.json  (ev ingest)
+ 1 INGEST              drop in PDFs / docx / pptx / md / html / emails / transcripts / images / voice notes → sources/*.txt + inventory.json  (ev ingest)
+ 1b STUDY BLOCKS       study calendar (ICS) → what is taught when; scan the learning platform (browser) for topic + preparation → preparation.json  (references/study-blocks.md, ev calendar)
  2 CURRICULUM          synthesise a plan for THIS learner               → curriculum.json                 (references/curriculum-synthesis.md, ev plan)
  3 REVIEW GATE         learner approves outline, length, what was cut   (nothing is narrated before this)
  4 PRODUCE             per video: script → scenes → preview → narrate → MP4   (sections below)
@@ -18,6 +19,8 @@ description: Personalised course generator. Learner drops in material (PDFs, doc
 (`AskUserQuestion` for choices), including the *analogy calibration test*: the same concept explained through 3 of the learner's worlds,
 they pick what clicked. In a plain terminal: `ev profile <dir>`. Every later choice must follow the profile – analogy domain, running example,
 humour, voice energy, pace, depth, mnemonic style, practice type, video length. Never use an analogy domain the learner marked "avoid"/"loser".
+
+If the learner has a **study calendar** (ICS/RSS feed), connect it (`ev calendar add <url>` – the URL is a secret: never print or commit it), run `ev calendar blocks`, then follow `references/study-blocks.md`: scan each block's course page with the browser (the learner signs in; you never type credentials) to find the topic and the preparation reading, and combine it with books, images, voice-note transcripts, emails and anything else they share. Build the curriculum per block and make each video ready *before* its first session.
 
 For a single video without a course, skip steps 1–3 and go to "One-time setup" / "Workflow" below.
 # explainer-video
