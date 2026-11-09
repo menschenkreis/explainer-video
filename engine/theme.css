@@ -12,7 +12,7 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:#05080f;overflow:hidden;font-family:var(--font)}
-#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center;
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;
   background:radial-gradient(1300px 760px at 18% -5%,#182a52 0%,var(--bg) 62%);color:var(--ink);overflow:hidden}
 #rail{position:absolute;right:96px;top:30px;display:flex;gap:12px;font-size:22px;font-weight:600;z-index:5}
 #rail span{padding:6px 16px;border-radius:999px;border:2px solid var(--line);color:var(--mute);transition:none}
@@ -100,3 +100,21 @@ body.exporting #ui,body.exporting #start{display:none!important}
 
 #ui a#dl{background:var(--a);color:#0d1526;border:1px solid var(--a);border-radius:8px;padding:6px 12px;font:700 15px var(--font);text-decoration:none;white-space:nowrap}
 #ui a#dl:hover{filter:brightness(1.1)}
+
+/* ---------- mobile / touch ---------- */
+#frame{position:fixed;inset:0;overflow:hidden;touch-action:none}
+#capbar{display:none}
+@media (pointer:coarse){#ui button,#ui select,#ui a#dl{min-height:44px;min-width:44px;font-size:16px}#ui{touch-action:manipulation}}
+body.portrait #frame{inset:auto;left:0;top:0;right:0;height:var(--fh)}
+body.portrait #caption{display:none!important}
+body.portrait #capbar{display:flex;position:fixed;left:0;right:0;top:var(--fh);bottom:var(--uih,120px);align-items:flex-start;justify-content:center;text-align:center;
+  padding:22px 18px 52px;font-size:clamp(18px,5vw,24px);line-height:1.35;color:#fff;overflow:auto;background:#0a1120;z-index:4;font-family:var(--font)}
+body.portrait #capbar.tip{color:#9fb0cc;font-size:clamp(15px,4.2vw,19px)}
+body.portrait.nocc #capbar{visibility:hidden}
+body.portrait #ui{left:0;right:0;bottom:0;flex-wrap:wrap;background:#0d1526;padding:10px 12px calc(10px + env(safe-area-inset-bottom));gap:10px;opacity:1!important;z-index:20}
+body.portrait #scrub{flex:1 1 100%;order:-2;height:34px;margin:0}
+body.portrait #time{order:-1;flex:1 1 auto;font-size:15px}
+body.portrait #jump{max-width:38vw}
+body.portrait #start{inset:auto;left:50%;top:calc(var(--fh)/2);transform:translate(-50%,-50%);margin:0;width:min(300px,78vw);height:64px;font-size:22px}
+body.portrait #capbar::after{content:attr(data-hint);position:fixed;left:0;right:0;bottom:calc(var(--uih,120px) + 10px);text-align:center;font-size:14px;color:#7f90ad;pointer-events:none}
+body:not(.exporting):not(.portrait) #caption{bottom:120px}

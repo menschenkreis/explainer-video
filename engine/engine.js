@@ -18,7 +18,7 @@ const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const easeOut = x => 1 - Math.pow(1 - x, 3);
 const easeIO = x => (x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 const NS = 'http://www.w3.org/2000/svg';
-const stage = $('#stage'), audio = $('#narration');
+const stage = $('#stage'), frame = $('#frame'), capbar = $('#capbar'), audio = $('#narration');
 const hasAudio = !!(audio && audio.getAttribute('src') && TM.audio);
 if (EXPORT) document.body.classList.add('exporting');
 
@@ -147,15 +147,40 @@ function render(tt) {
   // captions
   let idx = -1;
   for (let i = 0; i < TM.captions.length; i++) { const c = TM.captions[i]; if (cur >= c.start && cur < c.end) { idx = i; break; } }
-  if (idx !== capIdx) { capIdx = idx; if (idx < 0) { cap.classList.remove('show'); } else { cap.textContent = TM.captions[idx].text; cap.classList.add('show'); } }
+  if (idx !== capIdx) {
+    capIdx = idx;
+    if (idx < 0) { cap.classList.remove('show'); showTip(); }
+    else { cap.textContent = TM.captions[idx].text; cap.classList.add('show'); capbar.classList.remove('tip'); capbar.textContent = TM.captions[idx].text; }
+  }
 }
 
-/* ---------- fit to window ---------- */
+/* ---------- fit to window (desktop, phone landscape, phone portrait) + zoom/pan ---------- */
+let Z = 1, PX = 0, PY = 0, portrait = false, started = false;
+const TIP = (TM.lang || 'de') === 'de' ? 'Tipp: Handy quer drehen oder ⛶ für Vollbild · Doppeltippen oder zwei Finger zum Zoomen' : 'Tip: rotate your phone or tap ⛶ for full screen · double-tap or pinch to zoom';
+const HINT = (TM.lang || 'de') === 'de' ? '↻ Quer drehen für ein grösseres Bild' : '↻ Rotate for a bigger picture';
+function showTip() { if (!started && portrait) { capbar.textContent = TIP; capbar.classList.add('tip'); } else if (capIdx < 0) capbar.textContent = ''; }
 function fit() {
-  const s = EXPORT ? 1 : Math.min(innerWidth / 1920, innerHeight / 1080);
-  stage.style.transform = `translate(-50%,-50%) scale(${s})`;
+  const W = innerWidth, H = innerHeight;
+  portrait = !EXPORT && W < 820 && H > W * 1.05;
+  document.body.classList.toggle('portrait', portrait);
+  const fw = W, fh = portrait ? Math.round(W * 9 / 16) : H;
+  document.documentElement.style.setProperty('--fh', fh + 'px');
+  const u = $('#ui'); if (u && portrait) document.documentElement.style.setProperty('--uih', u.offsetHeight + 'px');
+  const s = EXPORT ? 1 : Math.min(fw / 1920, fh / 1080), k = s * Z, w = 1920 * k, h = 1080 * k;
+  const mx = Math.max(0, (w - fw) / 2), my = Math.max(0, (h - fh) / 2);
+  PX = clamp(PX, -mx, mx); PY = clamp(PY, -my, my);
+  stage.style.transform = `translate(${(fw - w) / 2 + PX}px,${(fh - h) / 2 + PY}px) scale(${k})`;
+  capbar.dataset.hint = portrait ? HINT : '';
+  showTip();
 }
-addEventListener('resize', fit); fit();
+function setZoom(z, cx, cy) {                  // cx/cy: point (client px) that should stay under the finger
+  const fh = portrait ? Math.round(innerWidth * 9 / 16) : innerHeight, old = Z; Z = clamp(z, 1, 3);
+  if (Z === 1) { PX = PY = 0; }
+  else if (cx !== undefined) { const ox = cx - innerWidth / 2, oy = cy - fh / 2; PX = ox - (ox - PX) * Z / old; PY = oy - (oy - PY) * Z / old; }
+  fit();
+}
+addEventListener('resize', fit); addEventListener('orientationchange', () => setTimeout(fit, 250)); fit();
+window.__zoom = () => Z;
 
 /* ---------- player ---------- */
 let playing = false, last = 0, rate = 1;
@@ -176,7 +201,7 @@ function tick(ts) {
 }
 function play() {
   if (cur >= TM.duration - 0.05) seek(0);
-  playing = true; last = performance.now();
+  playing = true; started = true; last = performance.now();
   if (hasAudio && cur < (audio.duration || 1e9)) { audio.playbackRate = rate; audio.currentTime = cur; audio.play().catch(() => {}); }
   requestAnimationFrame(tick); updateUI();
 }
@@ -205,7 +230,35 @@ if (!EXPORT && ui) {
   $('#cc').onclick = e => { document.body.classList.toggle('nocc'); e.target.classList.toggle('on', !document.body.classList.contains('nocc')); };
   $('#cc').classList.add('on');
   $('#rate').onchange = e => { rate = parseFloat(e.target.value); if (hasAudio) audio.playbackRate = rate; };
-  $('#fs').onclick = () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen());
+  const de = document.documentElement, canFs = !!(de.requestFullscreen || de.webkitRequestFullscreen);
+  if (!canFs) $('#fs').style.display = 'none';
+  $('#fs').onclick = () => {
+    if (document.fullscreenElement || document.webkitFullscreenElement) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+    Promise.resolve((de.requestFullscreen || de.webkitRequestFullscreen).call(de)).then(() => { try { screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {}); } catch (e) {} }).catch(() => {});
+  };
+  $('#zoom').onclick = () => setZoom(Z < 1.5 ? 1.8 : Z < 2.4 ? 2.6 : 1);
+  // touch + mouse gestures on the picture: tap = play/pause, double-tap = zoom, pinch = zoom, drag = pan when zoomed
+  const pts = new Map(); let moved = false, t0 = 0, lastTap = 0, pinch = null;
+  frame.addEventListener('pointerdown', e => {
+    try { frame.setPointerCapture(e.pointerId); } catch (err) {}
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); moved = false; t0 = performance.now();
+    if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: Z }; }
+  });
+  frame.addEventListener('pointermove', e => {
+    const p = pts.get(e.pointerId); if (!p) return; const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+    if (pts.size === 2 && pinch) { const [a, b] = [...pts.values()]; moved = true; setZoom(pinch.z * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d, (a.x + b.x) / 2, (a.y + b.y) / 2); }
+    else if (pts.size === 1 && Z > 1) { PX += dx; PY += dy; if (Math.abs(dx) + Math.abs(dy) > 2) moved = true; fit(); }
+    else if (Math.abs(dx) + Math.abs(dy) > 6) moved = true;
+  });
+  const end = e => {
+    if (!pts.has(e.pointerId)) return; pts.delete(e.pointerId); if (pts.size < 2) pinch = null;
+    if (e.type !== 'pointerup' || moved || performance.now() - t0 > 350 || pts.size) return;
+    const now = performance.now();
+    if (now - lastTap < 320) { lastTap = 0; setZoom(Z > 1 ? 1 : 2.2, e.clientX, e.clientY); }
+    else { lastTap = now; setTimeout(() => { if (lastTap === now) { lastTap = 0; startBtn.style.display = 'none'; playing ? pause() : play(); } }, 330); }
+  };
+  frame.addEventListener('pointerup', end); frame.addEventListener('pointercancel', end);
+  document.addEventListener('fullscreenchange', fit);
   addEventListener('keydown', e => {
     if (e.code === 'Space') { e.preventDefault(); startBtn.style.display = 'none'; playing ? pause() : play(); }
     else if (e.code === 'ArrowRight') seek(cur + 5); else if (e.code === 'ArrowLeft') seek(cur - 5);
@@ -213,8 +266,8 @@ if (!EXPORT && ui) {
     else if (e.key === '[') { const i = S.findIndex(s => cur < s.end); const p = S[Math.max(0, i - 1)]; seek(p.start + 0.05); }
     else if (e.key === 'c') $('#cc').click(); else if (e.key === 'f') $('#fs').click();
   });
-  let hideT; const poke = () => { ui.classList.remove('hide'); clearTimeout(hideT); hideT = setTimeout(() => playing && ui.classList.add('hide'), 2500); };
-  addEventListener('mousemove', poke); poke();
+  let hideT; const poke = () => { ui.classList.remove('hide'); clearTimeout(hideT); hideT = setTimeout(() => playing && !portrait && ui.classList.add('hide'), 2500); };
+  addEventListener('mousemove', poke); addEventListener('pointerdown', poke); poke(); fit();
   if (Q.has('t')) startBtn.style.display = 'none';
   updateUI();
 }

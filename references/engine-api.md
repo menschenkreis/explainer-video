@@ -57,3 +57,11 @@ Custom CSS per project: `theme.css` next to `script.md` (appended after the engi
 `window.__seek(t)` draws time t · `window.__duration` · `window.__cues` · `window.__scenes` · `window.__missing`
 (cues missing from timing) · `window.__t()` current time · URL params: `?export=1` hides UI, `?t=12.5` starts there.
 Keys: Space play/pause, ←/→ ±5 s, `[` `]` previous/next scene, `c` captions, `f` fullscreen.
+
+## Phones and touch (built into every player)
+* **Portrait phones** (width < 820 px): picture on top, captions as large readable text below it, big touch controls underneath, a one-time tip, and a "rotate for a bigger picture" hint.
+* **Landscape phones / tablets / desktop:** full-window picture, controls overlay (auto-hide while playing), captions lifted above the controls.
+* **Gestures on the picture:** tap = play/pause · double-tap = zoom 2.2× at that spot (again = back) · pinch = zoom (1×–3×) · drag = pan while zoomed. A 🔍 button cycles zoom levels.
+* **⛶ Full screen** also asks the browser to lock landscape (works on Android; iPhone can only rotate manually).
+* The picture is a fixed 1920×1080 canvas that is scaled; authoring tip: keep body text ≥ 24 px and prefer short bullet lists – on a phone the zoom gesture covers the rest.
+* `?export=1` (MP4 export / screenshots) ignores all of this and renders exactly 1920×1080.
