@@ -2,6 +2,7 @@
 """ingest.py <file-or-folder>… [--out DIR]  –  turn a pile of source material into page-marked text + an inventory.
 
 Supports: .pdf (needs pymupdf – installed by `ev setup`), .docx, .pptx, .md/.txt, .html/.htm, .eml (emails), .vtt/.srt (transcripts).
+Google Drive pointer files (.gdoc/.gsheet/.gslides) are listed with their doc_id and "needs": "google-connector".
 Images (.png/.jpg/.heic) and audio/voice notes (.m4a/.mp3/.wav) are listed in the inventory with "needs": "vision" / "transcription"
 (the agent describes images; voice notes need a transcript .txt, e.g. from whisper or your phone).
 Writes  <out>/sources/<name>.txt   (with '=== PAGE n ===' / '=== SLIDE n ===' markers)
@@ -69,6 +70,9 @@ NEEDS = {".png": "vision", ".jpg": "vision", ".jpeg": "vision", ".heic": "vision
          ".m4a": "transcription", ".mp3": "transcription", ".wav": "transcription", ".aac": "transcription", ".ogg": "transcription"}
 
 
+GOOGLE = {".gdoc": "Docs", ".gsheet": "Sheets", ".gslides": "Slides"}
+
+
 READERS = {".eml": read_eml, ".vtt": read_subs, ".srt": read_subs, ".pdf": read_pdf, ".docx": read_docx, ".pptx": read_pptx, ".md": read_text, ".txt": read_text, ".html": read_text, ".htm": read_text}
 
 
@@ -82,6 +86,15 @@ def main():
     inv = []
     for f in files:
         rd = READERS.get(f.suffix.lower())
+        if f.suffix.lower() in GOOGLE and not f.name.startswith("."):    # Google Drive for desktop: pointer files, no content on disk
+            try:
+                doc_id = json.loads(f.read_text(encoding="utf-8")).get("doc_id", "")
+            except Exception:
+                doc_id = ""
+            inv.append({"file": str(f), "text_file": None, "type": f.suffix.lower().lstrip("."), "pages": 0, "words": 0, "read_minutes": 0, "headings": [],
+                        "needs": "google-connector", "doc_id": doc_id,
+                        "hint": f"read it with the Google {GOOGLE[f.suffix.lower()]} connector (id {doc_id}) and save the text as sources/<name>.txt – or export it (File → Download → .docx/.md) and re-run ingest"})
+            print(f"! {f.name}: Google {GOOGLE[f.suffix.lower()]} pointer – needs the Google connector or an export (see inventory.json)"); continue
         if f.suffix.lower() in NEEDS and not f.name.startswith("."):      # images / voice notes: cannot be read by this script
             need = NEEDS[f.suffix.lower()]
             inv.append({"file": str(f), "text_file": None, "type": f.suffix.lower().lstrip("."), "pages": 0, "words": 0, "read_minutes": 0, "headings": [], "needs": need,

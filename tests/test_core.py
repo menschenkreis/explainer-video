@@ -85,5 +85,76 @@ class Pipeline(unittest.TestCase):
         self.assertTrue((d / "site/c/v/index.html").exists()); self.assertTrue((d / "site/cards.html").exists())
 
 
+class CourseTools(unittest.TestCase):
+    """coord (claims/log/status), plan repair + competency coverage, kit writer, site drills, publish, ingest of .gdoc"""
+    def run_py(self, script, *args, cwd=None, env=None):
+        return subprocess.run([sys.executable, str(SC / script), *args], cwd=cwd, capture_output=True, text=True, env=env)
+
+    def course(self):
+        d = Path(tempfile.mkdtemp())
+        (d / "curriculum.json").write_text(json.dumps({"title": "T", "language": "de", "trigger": "Test: 9/21, falsch: A1, A3",
+            "competencies": "comp.json", "modules": [{"id": "m", "title": "M", "videos": [
+                {"slug": "v1", "title": "Teil 1: Die Grösse", "objectives": ["x"], "analogy": {"domain": "d"}, "est_minutes": 5, "fixes": ["A1"], "competencies": ["C5"]},
+                {"slug": "v2", "title": "V2", "objectives": ["x"], "analogy": {"domain": "d"}, "est_minutes": 5, "competencies": ["ZZ"]}]}]}))
+        (d / "comp.json").write_text(json.dumps({"items": [{"id": "C5", "title": "Nutzen", "focus": True}, {"id": "C6", "title": "Entscheid", "focus": True}]}))
+        return d
+
+    def test_plan_repair_and_competencies(self):
+        d = self.course(); r = self.run_py("plan.py", str(d / "curriculum.json"))
+        self.assertIn("A3     → — not covered", r.stdout)
+        self.assertIn("self-test item A3 is not fixed", r.stdout)
+        self.assertIn("unknown competency id 'ZZ'", r.stdout)
+        self.assertIn("focus competency C6", r.stdout)
+
+    def test_claims_block_other_agent(self):
+        d = self.course()
+        self.assertEqual(self.run_py("coord.py", "claim", str(d), "v1", "--agent", "claude").returncode, 0)
+        r = self.run_py("coord.py", "claim", str(d), "v1", "--agent", "codex"); self.assertNotEqual(r.returncode, 0); self.assertIn("claimed by claude", r.stdout)
+        self.assertNotEqual(self.run_py("coord.py", "release", str(d), "v1", "--agent", "codex").returncode, 0)
+        self.assertEqual(self.run_py("coord.py", "release", str(d), "v1", "--agent", "claude").returncode, 0)
+        self.assertIn("released `v1`", (d / "COURSE_LOG.md").read_text())
+        self.assertIn("v1", self.run_py("coord.py", "status", str(d)).stdout)
+
+    def test_kit_write(self):
+        d = Path(tempfile.mkdtemp()); (d / "_tools").mkdir()
+        (d / "_tools/v1.py").write_text('from kit import *\nwrite("v1", dict(title="T"), [dict(id="a", menu="A", part="P", kick="K", title="T", '
+                                        'say="Hallo [x] Welt.", body=box(0,0,100,100,"x","a","x") + txt(0,0,10,"y",cue="nope"))])\n')
+        r = subprocess.run([sys.executable, str(d / "_tools/v1.py")], capture_output=True, text=True, env=dict(os.environ, PYTHONPATH=str(SC)))
+        self.assertEqual(r.returncode, 0, r.stderr); self.assertIn("nope", r.stdout)
+        self.assertIn("## a | A", (d / "v1/script.md").read_text()); self.assertTrue((d / "v1/scenes/01-a.html").exists())
+
+    def test_site_exercises(self):
+        d = Path(tempfile.mkdtemp()); p = d / "p"; shutil.copytree(ROOT / "examples/rainbow", p, ignore=shutil.ignore_patterns("build", "index.html"))
+        self.run_py("narrate.py", "script.md", "--estimate", cwd=p); self.run_py("build.py", ".", cwd=p)
+        ex = [{"type": "prefmatrix", "title": "PM", "criteria": ["a", "b"]}, {"type": "nwa", "title": "N", "criteria": [{"name": "a", "weight": 1}], "variants": ["x"]},
+              {"type": "conflict", "goals": ["a", "b"]}, {"type": "steps", "steps": [{"q": "1", "a": "2"}]}]
+        (d / "site.json").write_text(json.dumps({"title": "T", "lang": "de", "courses": [{"id": "c", "title": "C", "videos": [
+            {"slug": "v", "title": "V", "dir": "p", "exercises": ex, "links": [{"title": "App", "href": "https://example.org"}]}]}]}))
+        r = self.run_py("site_build.py", str(d / "site.json")); self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual((d / "site/drills.html").read_text().count('class="ex"'), 4)
+        self.assertIn("example.org", (d / "site/c/v/index.html").read_text())
+        (d / "site.json").write_text(json.dumps({"title": "T", "courses": [{"id": "c", "title": "C", "videos": [{"slug": "v", "title": "V", "dir": "p", "exercises": [{"type": "nope"}]}]}]}))
+        self.assertNotEqual(self.run_py("site_build.py", str(d / "site.json")).returncode, 0)
+
+    def test_publish_archives_and_refuses_stale(self):
+        d = self.course(); out = d / "drive"; out.mkdir(); (d / "v1").mkdir()
+        cur = json.loads((d / "curriculum.json").read_text()); cur["publish"] = {"to": str(out), "name": "X_V{n}_{short}.mp4"}
+        cur["modules"][0]["videos"][0]["replaces"] = ["Old.mp4"]; (d / "curriculum.json").write_text(json.dumps(cur))
+        (out / "Old.mp4").write_text("old"); (d / "v1/video.mp4").write_text("new")
+        self.assertFalse((out / "X_V1_Die-Groesse.mp4").exists() or self.run_py("publish.py", str(d)).returncode)   # dry run copies nothing
+        self.assertFalse((out / "X_V1_Die-Groesse.mp4").exists())
+        self.run_py("publish.py", str(d), "--yes")
+        self.assertEqual((out / "X_V1_Die-Groesse.mp4").read_text(), "new"); self.assertFalse((out / "Old.mp4").exists())
+        self.assertEqual(len(list((out / "_Archiv").glob("Old__*.mp4"))), 1)
+        (d / "v1/narration.mp3").write_text("n"); os.utime(d / "v1/video.mp4", (1, 1))
+        self.assertIn("older than narration", self.run_py("publish.py", str(d)).stdout)
+
+    def test_ingest_gdoc_pointer(self):
+        d = Path(tempfile.mkdtemp()); (d / "in").mkdir(); (d / "in/Kurs.gdoc").write_text(json.dumps({"doc_id": "abc123"}))
+        self.run_py("ingest.py", str(d / "in"), "--out", str(d))
+        f = json.loads((d / "sources/inventory.json").read_text())["files"][0]
+        self.assertEqual((f["needs"], f["doc_id"]), ("google-connector", "abc123"))
+
+
 if __name__ == "__main__":
     unittest.main()

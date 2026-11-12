@@ -18,7 +18,16 @@
   ev shots <dir> [--all-scenes | --scene id] [--sheet]    screenshots to check layout / sync
   ev mp4 <dir> [--captions] [--start s --end s]            export video.mp4 (adds the ⬇ MP4 button)
   ev all <dir>                    narrate + build + mp4 + build
-  ev site <site.json>             build the free static study website
+  ev site <site.json>             build the free static study website (videos, quizzes, flashcards, interactive drills)
+
+Course-level (the folder with curriculum.json):
+  ev status <course>              every video: stage (script/preview/narrated/mp4), owner, warnings + recent log
+  ev claim <course> <slug> [--agent NAME] [--note …]    take a video before editing it (Claude, Codex, … never collide)
+  ev release <course> <slug> [--note "done: … next: …"] give it back
+  ev log <course> "message"       append to COURSE_LOG.md (decisions, narration runs, exports)
+  ev kit <file.py> [--shots]      run a scene-DSL video file (scripts/kit.py) → estimate + build (+ screenshot sheet)
+  ev publish <course> [--only slug] [--yes]             copy finished MP4s to the delivery folder with the naming rule,
+                                                        archiving older versions (dry run without --yes)
 
 Everything runs inside the project directory, so relative paths just work.
 """
@@ -107,6 +116,9 @@ def main():
     if c == "plan": return py("plan.py", a)
     if c == "extract": return py("extract_chapter.py", a, venv=True)
     if c == "site": return py("site_build.py", a)
+    if c in ("status", "claim", "release", "log"): return py("coord.py", [c, *a])
+    if c == "publish": return py("publish.py", a)
+    if c == "kit": return py("kit.py", ["--run", *a])
     d, rest = need_dir(a)
     if c == "narrate": return py("narrate.py", ["script.md", *rest], cwd=d)
     if c == "build": return py("build.py", ["."], cwd=d)

@@ -16,6 +16,13 @@ ev calendar blocks <project> --days 400 --past 60    # → <project>/calendar/st
   `Course - Teacher (CODE)` are split into course / teacher / code; `Block N` markers are honoured when present.
 * Calendar events usually carry **no content description**, only a course link: the topic must come from the next step.
 
+## 1b. No calendar feed? Use the course outline
+Many courses live only on the learning platform. Then the **course outline is the source of truth**: ask the learner for the course page
+(scan it as in step 2) or for an exported outline – a Google Doc, PDF or `.docx` with blocks, reading assignments, tasks and self-tests.
+A `.gdoc`/`.gsheet` file from Google Drive for desktop is only a pointer: `ev ingest` lists its `doc_id` – read it with the Google Docs/Drive connector
+(or ask for an export). Build `preparation.json` from it exactly as in step 2, and note the learner's *status* per task when the outline has it
+(done / open / score) – open tasks and failed self-tests decide what to produce first.
+
 ## 2. Find the topic and the preparation per block (scan, don't guess)
 For each block (start with the nearest one):
 1. **Open the block's link in the browser** (built-in browser skill, or Claude in Chrome). These are usually learning-platform pages behind a login:

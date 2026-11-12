@@ -15,7 +15,11 @@ voice can never drift. Export to MP4, publish as a free study website, or just p
 * **No video generation** – every frame is drawn by code, so it is deterministic, tiny (a 9-minute video ≈ 70 KB HTML + 10 MB audio), editable and free to re-render.
 * **Teaching building blocks** – analogy / worked example / mnemonic scenes, roadmap and recap scenes, auto-routed arrows, charts that draw themselves.
 * **One-click MP4** – frame-exact export (captions optional); the player gets a “⬇ MP4” button automatically.
-* **Study website** – `ev site` builds a free static site: player, MP4/MP3 download, chapters, transcript, self-tests and flashcards. No login, no tracking.
+* **Study website** – `ev site` builds a free static site: player, MP4/MP3 download, chapters, transcript, self-tests, flashcards and interactive method drills (Präferenzmatrix, Nutzwertanalyse, goal-conflict matrix, worked examples). No login, no tracking.
+* **Exam-aware** – repair mode maps every wrong self-test item to a video that fixes it; a competency file (e.g. a qualification profile) shows which exam competencies the course trains.
+* **Scene DSL** – write a whole video as one Python file, narration and picture side by side (`ev kit`).
+* **Delivery** – `ev publish` copies finished MP4s to your (Drive) folder under one naming rule and archives old versions.
+* **Claude Code + Codex** – installs for both; `ev status / claim / release / log` let several agents work on one course without collisions.
 * **Works as a Claude Code skill** – ask Claude: *“Use the explainer-video skill to make a video from chapter 3 of this PDF.”*
 
 

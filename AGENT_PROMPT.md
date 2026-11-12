@@ -1,12 +1,14 @@
 # Paste this into your AI agent
 
-Works with Claude Code and any agent that can run shell commands and read files.
+Works with Claude Code, Codex and any agent that can run shell commands and read files. `install.sh` links the skill for
+Claude Code (`~/.claude/skills`) and Codex (`~/.codex/skills`) – one copy, both agents.
 
 ## First time (installs the skill and starts)
 ```text
 Set up and use the "explainer-video" skill for me.
 
-1. Install it (skip if ~/.claude/skills/explainer-video already exists):
+1. Install it – skip this step if `ev doctor` already works or ~/.claude/skills/explainer-video or ~/.codex/skills/explainer-video exists
+   (never clone a second copy):
    git clone https://github.com/menschenkreis/explainer-video ~/explainer-video && ~/explainer-video/install.sh
    Then run `ev doctor` and help me fix anything it flags (ffmpeg, Chrome, helper venv).
 2. Read ~/explainer-video/SKILL.md and follow its workflow.
@@ -20,6 +22,8 @@ Set up and use the "explainer-video" skill for me.
 5. Build each video, check the layout with screenshots, give me a free preview (estimated timing), and iterate with me.
 
 Rules:
+- If another agent (Claude Code / Codex) works on the same course: run `ev status <course>` first, `ev claim` a video before editing it,
+  `ev release` it when done (references/multi-agent.md). Never edit a video someone else has claimed.
 - Never ask me to paste my ElevenLabs API key into this chat. Tell me to run `ev key` in my own terminal.
 - Before any narration run `ev narrate <dir> --dry-run` and tell me the character count. Wait for my OK.
   Test the voice on ONE scene first; changing voice/model later re-narrates everything.
@@ -32,6 +36,13 @@ Rules:
 ```text
 Use the explainer-video skill. My material is in <folder>. Start with the learntype brainstorm (how do I learn, which analogies
 click?), then build me a personal curriculum and videos. Show the plan and the narration cost before spending anything.
+```
+
+## Repair after a failed self-test
+```text
+Use the explainer-video skill. I failed <test> (result PDF: <path>). Find out WHY each item went wrong, plan short repair videos
+(curriculum-synthesis.md §4c, "fixes"), tag them with my exam competencies (competencies.json) and add practice drills for the
+methods. Show me the plan and the narration cost first.
 ```
 
 ## Just one video, no course

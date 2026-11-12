@@ -11,10 +11,19 @@ description: Personalised course generator. Learner drops in material (PDFs, doc
  1b STUDY BLOCKS       study calendar (ICS) → what is taught when; scan the learning platform (browser) for topic + preparation → preparation.json  (references/study-blocks.md, ev calendar)
  2 CURRICULUM          synthesise a plan for THIS learner               → curriculum.json                 (references/curriculum-synthesis.md, ev plan)
  3 REVIEW GATE         learner approves outline, length, what was cut   (nothing is narrated before this)
- 4 PRODUCE             per video: script → scenes → preview → narrate → MP4   (sections below)
- 5 STUDY SITE          transcripts, self-tests, flashcards, MP4 download     (ev site)
- 6 FEEDBACK            "which analogy landed?" → refine the profile, adjust the next videos
+ 4 PRODUCE             per video: claim → script → scenes (scene DSL: ev kit) → preview → narrate → MP4 → release   (sections below)
+ 5 STUDY SITE          transcripts, self-tests, flashcards, interactive method drills, MP4 download     (ev site, docs/study-site.md)
+ 5b PUBLISH            MP4s → the learner's delivery folder (e.g. Google Drive) under one naming rule, old versions archived  (ev publish)
+ 6 FEEDBACK            "which analogy landed?" + retake the self-test → refine the profile, repair what is still wrong
 ```
+**Course-level state** lives in the course folder (the one with `curriculum.json`): `ev status <course>` shows every video's stage,
+owner and warnings. **More than one agent (Claude Code, Codex …)?** Read `references/multi-agent.md` first: `ev status` → `ev claim`
+→ work only in that video → `ev log` → `ev release`. Never edit a video another agent has claimed.
+
+**Repair mode** – when the trigger is a failed self-test/exam: record it in `curriculum.json` (`selftest.wrong`), give each video `fixes`,
+open and close every repair video with the failed item (curriculum-synthesis.md §4c). **Exam competencies** – keep a `competencies.json`
+(qualification profile + module goals) and tag videos with `competencies`; `ev plan` reports coverage (§4d). **Methods need practice,
+not only quizzes**: add `exercises` (Präferenzmatrix, Nutzwertanalyse, Zielkonfliktmatrix, worked examples) – §4e.
 **Always start with step 0 unless a `learner-profile.json` already exists** (offer to refresh it). Run it as a friendly conversation
 (`AskUserQuestion` for choices), including the *analogy calibration test*: the same concept explained through 3 of the learner's worlds,
 they pick what clicked. In a plain terminal: `ev profile <dir>`. Every later choice must follow the profile – analogy domain, running example,
@@ -43,7 +52,8 @@ scenes/NN-id.html ────────┤ build.py     engine + scenes + tim
 ~/.claude/skills/explainer-video/ev doctor    # checks python, ffmpeg, Chrome, ElevenLabs key
 ~/.claude/skills/explainer-video/ev key       # saves the ElevenLabs key (hidden prompt)
 ```
-`ev` wraps every script below (`ev new|preview|narrate|build|shots|mp4|all|site|voices|extract`); the raw scripts in
+`ev` wraps every script below (`ev new|preview|narrate|build|shots|mp4|all|site|voices|extract`, course-level
+`ev status|claim|release|log|publish`, scene DSL `ev kit`); the raw scripts in
 `scripts/` stay available. In the commands below `$EV` = this skill's `scripts/` folder, `$PY` = the helper venv python.
 ElevenLabs key: environment variable `ELEVENLABS_API_KEY`, or a line `ELEVENLABS_API_KEY=…` in `./.env` or
 `~/.config/explainer-video/.env`. **Never ask the user to paste the key into chat, never print it.**
@@ -56,10 +66,11 @@ Pick a voice with `python3 $EV/narrate.py --list-voices`, put `voice_id:` in the
 2. **Read the source.** `$PY $EV/extract_chapter.py book.pdf --find "3.1 Heading" --until "3.3 Next"` or
    `--pages 130-162 -o build/source.txt`; then read the text. OCR text around figures is noisy – rebuild diagrams
    from the prose and captions, cite page numbers.
-3. **Storyboard first**, then `script.md`. See `references/storyboard-guide.md`. Budget: German ≈ 14.5 chars/s,
-   i.e. **~870 characters per minute**. Aim for 8–10 min per video; **split long chapters into parts** rather than
+3. **Storyboard first**, then `script.md`. See `references/storyboard-guide.md`. Budget: German ≈ 13 chars/s,
+   i.e. **~780 characters per minute** (measured with eleven_v3; `ev plan` uses the same table). Aim for 8–10 min per video; **split long chapters into parts** rather than
    cramming (a 17k-character script is ~19 min). Check with `narrate.py script.md --estimate`.
-4. **Author scenes** – one fragment per scene in `scenes/NN-id.html`, elements tagged `data-at="cue"`
+4. **Author scenes** – preferred for courses: the scene DSL, one Python file per video with narration and picture side by side
+   (`references/kit.md`, `ev kit <file.py> --shots`). Or by hand: one fragment per scene in `scenes/NN-id.html`, elements tagged `data-at="cue"`
    `data-fx="rise|pop|draw|…"`. API in `references/engine-api.md`. Reuse the patterns in the guide (matrix, network
    with auto-routed arrows, phase ribbon, charts that draw themselves, swim-lanes, cycles with loop arrows, cards).
 5. **Preview without credits**: `python3 $EV/narrate.py script.md --estimate && python3 $EV/build.py` → open
@@ -90,6 +101,9 @@ Pick a voice with `python3 $EV/narrate.py --list-voices`, put `voice_id:` in the
 * Text on screen ≥ 24 px (stage is 1920×1080), ≤ ~25 words per card. Captions are on by default (`CC` button).
 * Never put work in `/tmp` – keep project folders under the user's chosen folder; the scratch workspace is deleted
   with the session.
+* **Delivery**: `ev publish <course>` (dry run first, `--yes` after the learner agrees). It refuses MP4s older than their narration
+  (stale export) and archives replaced files instead of deleting them. A synced Drive folder is the learner's real storage – never copy there by hand.
+* **One installed copy.** If `~/.claude/skills/explainer-video` and `~/.codex/skills/explainer-video` are not links to the same folder, stop and tell the learner.
 * This skill is *not* ComfyUI/AI-video generation. If the user wants generated footage, use the `comfy` skills.
 
 ## Gotchas already hit (don't repeat)
@@ -103,6 +117,7 @@ Pick a voice with `python3 $EV/narrate.py --list-voices`, put `voice_id:` in the
 * ElevenLabs `with-timestamps` returns characters of the *input* text; the script strips markers first, so indices match.
 
 ## Files
-`engine/` theme.css · engine.js · player.html (copied into every build) — `scripts/` narrate · build · shot ·
-render_mp4 · extract_chapter · new_project · mock_elevenlabs (test double for the API) — `references/` engine-api ·
-script-format · storyboard-guide.
+`engine/` theme.css · engine.js · player.html (copied into every build) — `scripts/` ev · narrate · build · shot ·
+render_mp4 · extract_chapter · new_project · ingest · plan · profile · ical · site_build · kit (scene DSL) · coord (status/claims/log) ·
+publish · mock_elevenlabs (test double for the API) — `references/` engine-api · script-format · storyboard-guide · learntype-session ·
+analogy-bank · curriculum-synthesis · study-blocks · kit · multi-agent — `docs/study-site.md`.

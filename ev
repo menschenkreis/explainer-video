@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
-# launcher: ./ev <command> …   (see ./ev --help)
-exec python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/scripts/ev.py" "$@"
+# launcher: ./ev <command> …   (see ./ev --help) – works when called through a symlink (e.g. ~/.local/bin/ev)
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do d="$(cd -P "$(dirname "$src")" && pwd)"; src="$(readlink "$src")"; [[ "$src" != /* ]] && src="$d/$src"; done
+exec python3 "$(cd -P "$(dirname "$src")" && pwd)/scripts/ev.py" "$@"
