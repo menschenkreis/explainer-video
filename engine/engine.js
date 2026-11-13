@@ -156,8 +156,8 @@ function render(tt) {
 
 /* ---------- fit to window (desktop, phone landscape, phone portrait) + zoom/pan ---------- */
 let Z = 1, PX = 0, PY = 0, portrait = false, started = false;
-const TIP = (TM.lang || 'de') === 'de' ? 'Tipp: Handy quer drehen oder ⛶ für Vollbild · Doppeltippen oder zwei Finger zum Zoomen' : 'Tip: rotate your phone or tap ⛶ for full screen · double-tap or pinch to zoom';
-const HINT = (TM.lang || 'de') === 'de' ? '↻ Quer drehen für ein grösseres Bild' : '↻ Rotate for a bigger picture';
+const TIP = (TM.lang || 'en').startsWith('de') ? 'Tipp: Handy quer drehen oder ⛶ für Vollbild · Doppeltippen oder zwei Finger zum Zoomen' : 'Tip: rotate your phone or tap ⛶ for full screen · double-tap or pinch to zoom';
+const HINT = (TM.lang || 'en').startsWith('de') ? '↻ Quer drehen für ein grösseres Bild' : '↻ Rotate for a bigger picture';
 function showTip() { if (!started && portrait) { capbar.textContent = TIP; capbar.classList.add('tip'); } else if (capIdx < 0) capbar.textContent = ''; }
 function fit() {
   const W = innerWidth, H = innerHeight;

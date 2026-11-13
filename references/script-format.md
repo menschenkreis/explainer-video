@@ -2,14 +2,15 @@
 
 ```markdown
 ---
-title: Systems Engineering – Systemgestaltung anwenden
-lang: de
+title: Systems Engineering – applying system design
+lang: en      # ISO code; drives estimate speed, player + caption language
 model: eleven_multilingual_v2      # eleven_v3 for expressive reading (audio tags), multilingual_v2 for steady explainer voice
 voice_id: xxxxxxxx                 # or env ELEVENLABS_VOICE_ID / --voice
 stability: 0.5                     # 0–1, lower = more expressive
 similarity: 0.75
 style: 0
 speed: 1.0                         # optional, 0.7–1.2
+cps: 15                            # optional: chars/second for --estimate (default per lang)
 lead: 0.7                          # silence before each scene's speech (visuals appear first)
 gap: 0.7                           # silence after each scene
 tail: 2.0                          # extra hold after the last scene

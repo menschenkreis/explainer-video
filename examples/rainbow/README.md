@@ -5,7 +5,7 @@ A tiny complete project (3 scenes, ~1½ min). Try it without any API key:
 ```bash
 ev preview examples/rainbow        # estimated timing, opens in your browser, costs nothing
 ```
-Click “Video starten” (▶). With narration:
+Click “▶ Start video”. With narration:
 
 ```bash
 ev key                             # paste your ElevenLabs key once

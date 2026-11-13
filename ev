@@ -1,3 +1,14 @@
 #!/usr/bin/env bash
-# launcher: ./ev <command> …   (see ./ev --help)
-exec python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/scripts/ev.py" "$@"
+# launcher: ev <command> …   (see: ev --help)
+# Works when called directly, through a symlink (e.g. ~/.local/bin/ev) or a chain of symlinks.
+# EV_HOME overrides the location of the checkout.
+set -e
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do                       # resolve symlinks portably (no `readlink -f` on older macOS)
+  dir="$(cd -P "$(dirname "$src")" && pwd)"
+  src="$(readlink "$src")"
+  case "$src" in /*) ;; *) src="$dir/$src" ;; esac
+done
+EV_HOME="${EV_HOME:-$(cd -P "$(dirname "$src")" && pwd)}"
+[ -f "$EV_HOME/scripts/ev.py" ] || { echo "ev: cannot find scripts/ev.py under $EV_HOME (set EV_HOME to your explainer-video checkout)" >&2; exit 1; }
+exec python3 "$EV_HOME/scripts/ev.py" "$@"

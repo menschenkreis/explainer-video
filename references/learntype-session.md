@@ -48,12 +48,13 @@ ask which analogies landed and refine the profile.
 ```json
 {
   "name": "optional",
-  "language": "de", "source_language": "de",
+  "language": "en", "source_language": "en",
   "goal": "exam | job | curiosity", "deadline": "2026-12-01", "prior_knowledge": "beginner | some | advanced",
   "running_example": {"domain": "online shop", "note": "works in e-commerce"},
   "analogy": {"home_turf": "bouldering", "likes": ["cooking", "sports", "gaming"], "avoid": ["military"], "winners": ["cooking"], "losers": ["music"]},
   "style": {"humour": "none | light | lots", "pace": "slow | balanced | brisk", "depth": "overview | standard | deep",
-            "voice_energy": "calm | lively | dramatic", "repetition": "low | medium | high", "mnemonics": ["acronym", "story"]},
+            "voice_energy": "calm | lively | dramatic", "repetition": "low | medium | high", "mnemonics": ["acronym", "story"],
+            "spelling": "optional regional variant, e.g. en-GB, en-US, de-CH (ss instead of ß)"},
   "practice": ["quiz", "flashcards"],
   "session_minutes": 8,
   "notes": "free text from the conversation"
@@ -64,6 +65,7 @@ ask which analogies landed and refine the profile.
 | profile | effect |
 |---|---|
 | `language` | narration language, caption language, site language |
+| `style.spelling` | regional spelling/vocabulary in script, captions and site |
 | `goal`, `deadline`, `prior_knowledge` | what is cut vs kept, depth, number of videos per week of study time |
 | `session_minutes` | target length per video (chars/min budget in `ev plan`) |
 | `depth` / `pace` | detail per concept, speech speed (`speed`), number of examples |

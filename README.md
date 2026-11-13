@@ -8,7 +8,7 @@ voice can never drift. Export to MP4, publish as a free study website, or just p
 ![analogy scene](docs/images/demo-analogy.png)
 
 * **Learns *you* first** – a short *learntype brainstorm* (how do you learn? which analogies click?) produces a learner profile that drives curriculum order, depth, pace, humour, voice, examples and mnemonics.
-* **Follows your study plan** – connect your calendar (ICS/iCal/OpenOlat feed): the skill works out what each study block is about, scans the course pages with a browser (you sign in) for the preparation reading, and combines books, slides, photos, voice-note transcripts and emails. Videos are ready before each block.
+* **Follows your study plan** – connect your calendar (any ICS/iCal feed: Google, Outlook, Moodle, OpenOlat …): the skill works out what each study block is about, scans the course pages with a browser (you sign in) for the preparation reading, and combines books, slides, photos, voice-note transcripts and emails. Videos are ready before each block.
 * **Synthesises a curriculum** from a pile of PDFs, Word, slides and notes, with a review gate before anything is narrated.
 * **Timed to the word** – write `[cue]` in your script; the animation tagged `data-at="cue"` fires exactly when that word is spoken.
 * **Real voice acting** – Eleven v3 audio tags (`{excited}`, `{whispers}`, `{laughs}`, …) for a YouTube-explainer feel, not a monotone reader.
@@ -22,9 +22,10 @@ voice can never drift. Export to MP4, publish as a free study website, or just p
 > ### 🤖 Using an AI agent? Paste this
 > ```text
 > Set up and use the "explainer-video" skill for me.
-> 1. Install it: git clone https://github.com/menschenkreis/explainer-video ~/explainer-video && ~/explainer-video/install.sh
->    then run `ev doctor` and help me fix anything it flags.
-> 2. Read ~/explainer-video/SKILL.md and follow its workflow.
+> 1. Install it: git clone https://github.com/menschenkreis/explainer-video ~/.claude/skills/explainer-video
+>    then run `~/.claude/skills/explainer-video/ev setup` and `~/.claude/skills/explainer-video/ev doctor`; help me fix what it flags.
+>    Use the full path if `ev` is not on my PATH; ask before editing my shell config.
+> 2. Read ~/.claude/skills/explainer-video/SKILL.md and follow its workflow.
 > 3. Start with the learntype brainstorm: interview me about HOW I learn and which analogies I understand, then save my profile.
 > 4. Ingest my material, synthesise a curriculum for MY profile, and wait for my approval before anything costs money.
 > Rules: never ask me to paste my ElevenLabs key into chat (tell me to run `ev key` myself); show `ev narrate --dry-run` cost and wait
@@ -33,12 +34,22 @@ voice can never drift. Export to MP4, publish as a free study website, or just p
 > More prompts (already installed, single video): [AGENT_PROMPT.md](AGENT_PROMPT.md).
 
 ## Quick start (2 minutes, no API key)
+**Option A – no installer.** A Claude Code skill is just a folder; `ev` works by its full path (also via symlinks):
 ```bash
-git clone https://github.com/menschenkreis/explainer-video ~/explainer-video && cd ~/explainer-video
-./install.sh                           # links it as a Claude Code skill, adds the `ev` command, sets up helpers
-ev preview examples/rainbow            # builds the demo with estimated timing and opens it in your browser
+git clone https://github.com/menschenkreis/explainer-video ~/.claude/skills/explainer-video
 ```
-Click **▶ Video starten**. You will see the animation build up on a silent timeline with captions.
+```bash
+~/.claude/skills/explainer-video/ev setup && ~/.claude/skills/explainer-video/ev preview ~/.claude/skills/explainer-video/examples/rainbow
+```
+**Option B – installer (convenience).** Clone anywhere; it links the skill, writes a small `ev` wrapper to `~/.local/bin`, sets up
+helpers and **asks before** adding `~/.local/bin` to your shell config (`--yes` / `--no-path` / `--no-skill` / `--help`):
+```bash
+git clone https://github.com/menschenkreis/explainer-video ~/explainer-video && ~/explainer-video/install.sh
+```
+```bash
+ev preview ~/explainer-video/examples/rainbow   # builds the demo with estimated timing and opens it in your browser
+```
+Click **▶ Start video**. You will see the animation build up on a silent timeline with captions.
 
 ### Add the voice
 ```bash
@@ -75,8 +86,16 @@ ev all videos/my-topic                 # real narration + MP4
 With Claude Code you can skip steps 1–2: *“Read chapter 4 of `book.pdf` and make a 8-minute explainer video, German, with analogies and mnemonics.”*
 
 ## Requirements
-Python ≥ 3.9 · `ffmpeg` (+`ffprobe`) · Google Chrome or Chromium (screenshots and MP4 export) · an ElevenLabs account for real narration
-(previews and the demo work without). `ev doctor` checks everything.
+Python ≥ 3.9 · `ffmpeg` (+`ffprobe`) · Google Chrome or Chromium (screenshots and MP4 export; `ev setup` downloads one if none is
+found) · an ElevenLabs account for real narration (previews and the demo work without). macOS and Linux; Windows via WSL.
+`ev doctor` checks everything.
+
+### Troubleshooting
+* **`ev: command not found`** – the bin dir isn't on your PATH. Call it by full path (`~/.claude/skills/explainer-video/ev`) or add
+  `export PATH="$HOME/.local/bin:$PATH"` to your `~/.zshrc` / `~/.bashrc` (or re-run `install.sh --yes`).
+* **Chrome not found** – set `EV_CHROME=/path/to/chrome` or run `ev setup`.
+* **Language** – `ev new <dir> "Title" --lang de` (or `lang:` in `script.md`). Player/site UI: English and German; other languages
+  fall back to English.
 
 ## How it works
 ```
