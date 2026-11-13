@@ -7,12 +7,14 @@ Works with Claude Code and any agent that can run shell commands and read files.
 Set up and use the "explainer-video" skill for me.
 
 1. Install it (skip if ~/.claude/skills/explainer-video already exists):
-   git clone https://github.com/menschenkreis/explainer-video ~/explainer-video && ~/explainer-video/install.sh
-   Then run `ev doctor` and help me fix anything it flags (ffmpeg, Chrome, helper venv).
-2. Read ~/explainer-video/SKILL.md and follow its workflow.
+   git clone https://github.com/menschenkreis/explainer-video ~/.claude/skills/explainer-video
+   ~/.claude/skills/explainer-video/ev setup && ~/.claude/skills/explainer-video/ev doctor
+   Help me fix anything doctor flags (ffmpeg, Chrome, helper venv). If `ev` is not on my PATH, use the full path;
+   ask me before editing my shell config (~/.zshrc etc.).
+2. Read ~/.claude/skills/explainer-video/SKILL.md and follow its workflow.
 3. Start with the learntype brainstorm (references/learntype-session.md): interview me about HOW I learn and which analogies I
    understand. One or two questions at a time, include the analogy calibration test, then save learner-profile.json and .md.
-3b. If I have a study calendar (ICS/iCal/OpenOlat link), ask me for it and run `ev calendar add` (treat the URL as a secret: never print or commit it),
+3b. If I have a study calendar (any ICS/iCal link), ask me for it and run `ev calendar add` (treat the URL as a secret: never print or commit it),
    then `ev calendar blocks`. Follow references/study-blocks.md: scan each block's course page with the browser to find the topic and preparation reading
    (I sign in myself; never type my credentials), and combine it with books, images, voice-note transcripts and emails I choose to share.
 4. Ask where my material is (PDFs, Word, slides, notes). Ingest it with `ev ingest`, then synthesise a curriculum for MY profile.

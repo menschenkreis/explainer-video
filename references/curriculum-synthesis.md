@@ -39,7 +39,7 @@ After the first video ask: “Which analogy landed? Which felt forced?” and up
 ## `curriculum.json`
 ```json
 {
-  "title": "Systems Engineering in 5 videos", "language": "de", "profile": "learner-profile.json",
+  "title": "Systems Engineering in 5 videos", "language": "en", "profile": "learner-profile.json",
   "sources": ["sources/inventory.json"],
   "modules": [{
     "id": "m1", "title": "Thinking in systems",

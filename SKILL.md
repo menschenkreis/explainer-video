@@ -38,10 +38,13 @@ scenes/NN-id.html ────────┤ build.py     engine + scenes + tim
 ```
 
 ## One-time setup
+`$SKILL` = the folder this SKILL.md lives in (usually `~/.claude/skills/explainer-video`). If `ev` is not on PATH, call `$SKILL/ev`
+– it works from anywhere, also through symlinks. **Don't edit the user's shell config (`~/.zshrc`, `~/.bashrc`, …) without asking**;
+`install.sh` asks before adding its bin dir to PATH (`--yes` / `--no-path` to decide up front). The installer is optional.
 ```bash
-~/.claude/skills/explainer-video/ev setup     # helper venv (pymupdf + playwright; uses your installed Chrome)
-~/.claude/skills/explainer-video/ev doctor    # checks python, ffmpeg, Chrome, ElevenLabs key
-~/.claude/skills/explainer-video/ev key       # saves the ElevenLabs key (hidden prompt)
+$SKILL/ev setup     # helper venv (pymupdf + playwright; uses an installed Chrome/Chromium, else downloads one)
+$SKILL/ev doctor    # checks python, ffmpeg, Chrome, ElevenLabs key, PATH
+$SKILL/ev key       # saves the ElevenLabs key (hidden prompt) – the user runs this, not you, if they prefer
 ```
 `ev` wraps every script below (`ev new|preview|narrate|build|shots|mp4|all|site|voices|extract`); the raw scripts in
 `scripts/` stay available. In the commands below `$EV` = this skill's `scripts/` folder, `$PY` = the helper venv python.
@@ -56,9 +59,9 @@ Pick a voice with `python3 $EV/narrate.py --list-voices`, put `voice_id:` in the
 2. **Read the source.** `$PY $EV/extract_chapter.py book.pdf --find "3.1 Heading" --until "3.3 Next"` or
    `--pages 130-162 -o build/source.txt`; then read the text. OCR text around figures is noisy – rebuild diagrams
    from the prose and captions, cite page numbers.
-3. **Storyboard first**, then `script.md`. See `references/storyboard-guide.md`. Budget: German ≈ 14.5 chars/s,
-   i.e. **~870 characters per minute**. Aim for 8–10 min per video; **split long chapters into parts** rather than
-   cramming (a 17k-character script is ~19 min). Check with `narrate.py script.md --estimate`.
+3. **Storyboard first**, then `script.md`. See `references/storyboard-guide.md`. Budget per minute of narration:
+   **en ≈ 900, de ≈ 780, fr/it ≈ 850 characters** (`plan.py` / `narrate.py` use these). Aim for 8–10 min per video; **split long chapters into parts** rather than
+   cramming (a 17k-character script is ~20 min). Check with `narrate.py script.md --estimate`.
 4. **Author scenes** – one fragment per scene in `scenes/NN-id.html`, elements tagged `data-at="cue"`
    `data-fx="rise|pop|draw|…"`. API in `references/engine-api.md`. Reuse the patterns in the guide (matrix, network
    with auto-routed arrows, phase ribbon, charts that draw themselves, swim-lanes, cycles with loop arrows, cards).
@@ -82,15 +85,15 @@ Pick a voice with `python3 $EV/narrate.py --list-voices`, put `voice_id:` in the
 * **Cue = the word the visual should land on.** Put `[cue]` right before it. Cue names: letters/digits/underscore only.
   Stagger list items with offsets (`cue+1.8`) inside the time the sentence takes.
 * **Spoken text ≠ slide text.** Write numbers/abbreviations the way they should be pronounced (“zwei bis fünf Prozent”,
-  “B M W”, section numbers go in the on-screen kicker, not in the narration). German: Swiss spelling (ss, no ß) when
-  the user is Swiss.
+  “B M W”, section numbers go in the on-screen kicker, not in the narration). Follow the learner's regional spelling
+  (`learner-profile.json` → `style.spelling`, e.g. en-GB vs en-US, Swiss German "ss" instead of "ß").
 * **Paraphrase, don't copy** book text (copyright); cite chapter/page on screen or in script notes (`> note`).
   Mark schematic redraws “schematisch nach Abb. x.y” so they aren't mistaken for the original figure.
-* **Match the user's language** to the source/exam language by default; confirm if unclear.
+* **Match the user's language** to the source/exam language by default; confirm if unclear. Set `lang:` in `script.md`
+  (`ev new <dir> "Title" --lang de`); player and site UI exist in en/de (others fall back to English – PRs welcome).
 * Text on screen ≥ 24 px (stage is 1920×1080), ≤ ~25 words per card. Captions are on by default (`CC` button).
-* Never put work in `/tmp` – keep project folders under the user's chosen folder; the scratch workspace is deleted
-  with the session.
-* This skill is *not* ComfyUI/AI-video generation. If the user wants generated footage, use the `comfy` skills.
+* Never put work in `/tmp` – ask the user where projects should live (e.g. `~/explainer-videos/`) and keep them there.
+* This skill is *not* AI video generation. If the user wants generated footage, say so and suggest a video-generation tool.
 
 ## Gotchas already hit (don't repeat)
 * An element with both `.graph` and `.abs` must stay absolutely positioned (fixed in theme.css; keep `.graph.abs`).
@@ -99,10 +102,16 @@ Pick a voice with `python3 $EV/narrate.py --list-voices`, put `voice_id:` in the
 * SVG text/shapes outside the `viewBox` are clipped unless `style="overflow:visible"`.
 * Edge endpoints need `id`s that are unique across the whole video (prefix with the scene id).
 * Don't name two cues the same inside one scene; cue keys are `sceneid.cue`.
-* Frame screenshots are the only way to see layout problems: long German words wrap – add `&shy;` hints.
+* Frame screenshots are the only way to see layout problems: long compound words (German, Dutch, Finnish…) wrap – add `&shy;` hints.
 * ElevenLabs `with-timestamps` returns characters of the *input* text; the script strips markers first, so indices match.
 
+## Environment knobs
+`EV_HOME` (checkout location for the launcher) · `EV_VENV` (helper venv) · `EV_CHROME` (Chrome/Chromium binary) ·
+`EV_BIN_DIR` / `CLAUDE_SKILLS_DIR` (install.sh targets) · `EV_NO_OPEN=1` (preview doesn't open a browser) ·
+`ELEVENLABS_API_KEY` / `ELEVENLABS_VOICE_ID`. Supported: macOS, Linux, Windows via WSL.
+
 ## Files
-`engine/` theme.css · engine.js · player.html (copied into every build) — `scripts/` narrate · build · shot ·
-render_mp4 · extract_chapter · new_project · mock_elevenlabs (test double for the API) — `references/` engine-api ·
-script-format · storyboard-guide.
+`engine/` theme.css · engine.js · player.html (copied into every build) — `scripts/` ev · narrate · build · shot ·
+render_mp4 · browser · extract_chapter · new_project · ingest · plan · profile · ical · site_build · scene_kit ·
+mock_elevenlabs (test double for the API) — `references/` engine-api · script-format · storyboard-guide ·
+learntype-session · curriculum-synthesis · study-blocks · analogy-bank.

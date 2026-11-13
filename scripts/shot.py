@@ -5,18 +5,12 @@
   shot.py index.html --scene elemente      # one frame ~1s after every cue + the final state of the scene
   shot.py index.html --all-scenes          # final state of every scene (overview)
 Add --sheet to also tile everything into one contact-sheet PNG (needs ffmpeg).
-Needs the venv from setup.sh (playwright) and Google Chrome (or a playwright chromium).
+Needs the venv from setup.sh (playwright) and Chrome/Chromium (see browser.py; EV_CHROME overrides).
 """
 import argparse, subprocess, sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-
-
-def launch(p):
-    try:
-        return p.chromium.launch(channel="chrome")
-    except Exception:
-        return p.chromium.launch()
+from browser import launch
 
 
 def main():

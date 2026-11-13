@@ -65,11 +65,11 @@ def main():
     dl = ""
     if (root / "video.mp4").exists():
         fname = re.sub(r"[^A-Za-z0-9._-]+", "_", (timing.get("title") or "video")).strip("_")[:80] + ".mp4"
-        dl = f'<a id="dl" href="video.mp4" download="{fname}" title="Video als MP4 herunterladen">⬇ MP4</a>'
-    out = (tpl.replace("{{LANG}}", timing.get("lang", "de")).replace("{{TITLE}}", timing.get("title") or "Explainer")
+        dl = f'<a id="dl" href="video.mp4" download="{fname}" title="Download MP4">⬇ MP4</a>'
+    out = (tpl.replace("{{LANG}}", timing.get("lang", "en")).replace("{{TITLE}}", timing.get("title") or "Explainer")
            .replace("{{THEME}}", css).replace("{{PROJECT_CSS}}", proj_css)
            .replace("{{SCENES}}", "\n".join(html_scenes)).replace("{{AUDIO_ATTR}}", audio_attr)
-           .replace("{{START}}", {"de": "▶ Video starten", "en": "▶ Start video"}.get(timing.get("lang", "de"), "▶ Start"))
+           .replace("{{START}}", {"de": "▶ Video starten", "en": "▶ Start video", "fr": "▶ Lancer la vidéo", "es": "▶ Iniciar vídeo", "it": "▶ Avvia video"}.get(timing.get("lang", "en")[:2], "▶ Start"))
            .replace("{{DL_BTN}}", dl).replace("{{TIMING_JSON}}", json.dumps(timing, ensure_ascii=False)).replace("{{ENGINE}}", js))
     (root / "index.html").write_text(out, encoding="utf-8")
     print(f'index.html written ({len(out)//1024} KB, {len(frags)} scenes, mode={timing["mode"]}, {timing["duration"]/60:.1f} min)')

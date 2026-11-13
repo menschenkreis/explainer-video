@@ -11,6 +11,7 @@ concatenated, then narration.mp3 is muxed.  Nothing is recorded in real time.
 import argparse, subprocess, sys, tempfile
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
+from browser import launch
 
 
 def render_slice(args):
@@ -20,10 +21,7 @@ def render_slice(args):
                            "-vf", f"scale={width}:-2", "-c:v", "libx264", "-preset", "veryfast", "-crf", "17", "-pix_fmt", "yuv420p", str(part)],
                           stdin=subprocess.PIPE)
     with sync_playwright() as p:
-        try:
-            b = p.chromium.launch(channel="chrome")
-        except Exception:
-            b = p.chromium.launch()
+        b = launch(p)
         pg = b.new_page(viewport={"width": 1920, "height": 1080})
         pg.goto(Path(html).resolve().as_uri() + "?export=1")
         pg.wait_for_function("window.__ready === true")
@@ -46,10 +44,7 @@ def main():
     a = ap.parse_args()
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
-        try:
-            b = p.chromium.launch(channel="chrome")
-        except Exception:
-            b = p.chromium.launch()
+        b = launch(p)
         pg = b.new_page(); pg.goto(Path(a.html).resolve().as_uri() + "?export=1"); pg.wait_for_function("window.__ready === true")
         dur = pg.evaluate("window.__duration"); b.close()
     end = min(a.end or dur, dur)

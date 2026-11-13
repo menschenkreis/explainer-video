@@ -5,7 +5,7 @@ The script format (see references/script-format.md):
 
     ---
     title: My video
-    lang: de
+    lang: en
     voice_id: <ElevenLabs voice id>        # or env ELEVENLABS_VOICE_ID / --voice
     model: eleven_multilingual_v2
     ---
@@ -145,6 +145,10 @@ def synth(text, voice, model, settings, key, prev, nxt):
 
 
 # ---------------------------------------------------------------- estimate mode
+# narrated characters per second for --estimate (rough; real timing comes from ElevenLabs)
+CPS = {"de": 13.0, "en": 15.0, "fr": 14.2, "es": 15.0, "it": 14.2, "nl": 14.0, "pt": 14.5}
+
+
 def estimate_alignment(text, cps):
     starts, ends, t = [], [], 0.0
     for i, ch in enumerate(text):
@@ -224,7 +228,7 @@ def main():
     ap.add_argument("script", nargs="?", default="script.md")
     ap.add_argument("--out", default=".", help="project dir (index.html + narration.mp3 live here; cache in build/)")
     ap.add_argument("--estimate", action="store_true", help="no API calls: estimated timing, no audio")
-    ap.add_argument("--cps", type=float, default=14.5, help="characters/second for --estimate (German ~14.5)")
+    ap.add_argument("--cps", type=float, default=None, help="characters/second for --estimate (default per language: de 13, en 15, …; or cps: in front matter)")
     ap.add_argument("--voice", help="ElevenLabs voice_id (overrides script front matter)")
     ap.add_argument("--list-voices", action="store_true")
     ap.add_argument("--only", help="comma-separated scene ids to (re)generate; others must be cached")
@@ -239,6 +243,8 @@ def main():
     if not scenes:
         sys.exit("script has no '## id | title' scenes")
     out = Path(a.out); cache = out / "build" / "audio"; cache.mkdir(parents=True, exist_ok=True)
+    if a.cps is None:
+        a.cps = float(meta.get("cps") or CPS.get(meta.get("lang", "en")[:2], 14.5))
     lead, gap, tail = float(meta.get("lead", .7)), float(meta.get("gap", .7)), float(meta.get("tail", 1.5))
     model = meta.get("model", "eleven_multilingual_v2")
     settings = {"stability": float(meta.get("stability", .5)), "similarity_boost": float(meta.get("similarity", .75)),
@@ -320,7 +326,7 @@ def main():
         if old.exists():
             old.unlink()          # stale audio from an earlier real run would desync the estimated timeline
 
-    timing = {"mode": "estimate" if a.estimate else "elevenlabs", "title": meta.get("title", ""), "lang": meta.get("lang", "de"),
+    timing = {"mode": "estimate" if a.estimate else "elevenlabs", "title": meta.get("title", ""), "lang": meta.get("lang", "en"),
               "duration": round(t0, 3), "audio": audio_name, "order": [s["id"] for s in scenes],
               "scenes": timeline, "cues": cues, "captions": caps}
     (out / "build").mkdir(exist_ok=True)

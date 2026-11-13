@@ -10,7 +10,7 @@
   ev plan <curriculum.json> [--scaffold]   validate the personalised curriculum, show the time budget, create one project per video
   ev calendar add <ics-url>       save your study-calendar feed privately (the URL contains a secret token)
   ev calendar fetch|blocks <dir>  download the feed / group it into study blocks (what is taught when, links to scan)
-  ev new <dir> "Title"            scaffold a single project
+  ev new <dir> "Title" [--lang en]   scaffold a single project
   ev extract <pdf> --pages 10-30  pull chapter text out of a PDF (-o out.txt)
   ev preview <dir>                estimate timing + build + open in browser (no credits)
   ev narrate <dir> [--dry-run] [--only id,id]   ElevenLabs narration (cached per scene)
@@ -22,7 +22,7 @@
 
 Everything runs inside the project directory, so relative paths just work.
 """
-import os, subprocess, sys, shutil, getpass
+import os, subprocess, sys, shutil, getpass, webbrowser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -58,12 +58,17 @@ def doctor():
         ok = ok and good
     print("ev doctor")
     row(sys.version_info >= (3, 9), f"python {sys.version.split()[0]}", "needs Python ≥ 3.9")
-    row(bool(shutil.which("ffmpeg")) and bool(shutil.which("ffprobe")), "ffmpeg + ffprobe", "macOS: brew install ffmpeg · Debian/Ubuntu: apt install ffmpeg")
-    chrome = [p for p in ("/Applications/Google Chrome.app", "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser") if Path(p).exists()]
-    row(bool(chrome) or (VENV / "bin").exists(), "Chrome/Chromium (for screenshots + MP4 export)", "install Google Chrome, or after 'ev setup' run: playwright install chromium")
+    ff_hint = {"darwin": "brew install ffmpeg"}.get(sys.platform, "Debian/Ubuntu: sudo apt install ffmpeg · Fedora: dnf · Arch: pacman · Windows: use WSL")
+    row(bool(shutil.which("ffmpeg")) and bool(shutil.which("ffprobe")), "ffmpeg + ffprobe", ff_hint)
+    chrome = [p for p in (os.environ.get("EV_CHROME", ""), "/Applications/Google Chrome.app", "/Applications/Chromium.app") if p and Path(p).exists()]
+    chrome += [w for w in map(shutil.which, ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser")) if w]
+    pw = any((Path.home() / d).is_dir() and any((Path.home() / d).glob("chromium*")) for d in ("Library/Caches/ms-playwright", ".cache/ms-playwright"))
+    row(bool(chrome) or pw, "Chrome/Chromium (for screenshots + MP4 export)", f"install Google Chrome, set EV_CHROME=/path/to/chrome, or run: {VENV}/bin/playwright install chromium")
     row(VPY.exists(), "helper venv (pymupdf, playwright)", "run: ev setup")
     has_key, src = key_status()
     row(has_key, f"ElevenLabs key ({src})" if has_key else "ElevenLabs key", "run: ev key   (needed only for real narration; previews work without)")
+    on_path = shutil.which("ev")
+    print(("  ✓ " if on_path else "  • ") + ("`ev` on PATH" if on_path else "`ev` not on PATH – call it by full path, or add its folder (e.g. ~/.local/bin) to PATH; install.sh can do it for you (asks first)"))
     print("\nAll good." if ok else "\nFix the ✗ items above, then run ev doctor again.")
     return 0 if ok else 1
 
@@ -116,7 +121,8 @@ def main():
         for step in (lambda: py("narrate.py", ["script.md", "--estimate"], cwd=d), lambda: py("build.py", ["."], cwd=d)):
             if step(): return 1
         idx = d / "index.html"
-        subprocess.call(["open" if sys.platform == "darwin" else "xdg-open", str(idx)])
+        if os.environ.get("EV_NO_OPEN") or not webbrowser.open(idx.as_uri()):
+            print(f"open in your browser: {idx}")
         return 0
     if c == "all":
         for step in (lambda: py("narrate.py", ["script.md", *rest], cwd=d), lambda: py("build.py", ["."], cwd=d),

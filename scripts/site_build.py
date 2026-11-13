@@ -80,7 +80,7 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument("site_json"); ap.add_argument("--out")
     a = ap.parse_args()
     sj = Path(a.site_json).resolve(); base = sj.parent; site = json.loads(sj.read_text(encoding="utf-8"))
-    site.setdefault("lang", "de"); t = T.get(site["lang"], T["en"])
+    site.setdefault("lang", "en"); t = T.get(site["lang"], T["en"])
     out = Path(a.out).resolve() if a.out else base / "site"
     if out.exists():
         shutil.rmtree(out)

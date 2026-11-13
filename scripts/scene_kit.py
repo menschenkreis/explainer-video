@@ -20,9 +20,9 @@ def _e(s):
     return s  # fragments may contain inline html (<b>, &shy;) on purpose
 
 
-def example_scene(sid, part, kick, title, analogy, example, mnemonic, case_label=None, lang="de"):
+def example_scene(sid, part, kick, title, analogy, example, mnemonic, case_label=None, lang="en"):
     """analogy={'emoji','title','text'}  example={'title'?,'bullets':[..]}  mnemonic={'phrase','sub'?,'tiles':[(letter,word),..]?}"""
-    lb = L[lang]; case_label = case_label or lb["case"]
+    lb = L.get(lang, L["en"]); case_label = case_label or lb["case"]
     bl = example["bullets"]
     fs, mb = {1: (32, 18), 2: (32, 18), 3: (30, 16), 4: (29, 14)}.get(len(bl), (27, 11))   # shrink with more bullets
     bullets = "".join(
@@ -62,9 +62,9 @@ def example_scene(sid, part, kick, title, analogy, example, mnemonic, case_label
 '''
 
 
-def bridge_scene(sid, n, total, parts, before, case, part="Part 1", lang="de", case_title="Running example"):
+def bridge_scene(sid, n, total, parts, before, case, part="Part 1", lang="en", case_title="Running example"):
     """parts = list of (title, sub) for all parts, n = current (1-based)"""
-    lb = L[lang]
+    lb = L.get(lang, L["en"])
     chips = "".join(
         f'<div class="card {"ca" if i+1==n else ""}" style="{"" if i+1==n else "opacity:.55;"}padding:12px 24px;font-size:27px;display:flex;gap:18px;align-items:center" data-at="w1+{0.35*i:.2f}" data-fx="left">'
         f'<span style="font-weight:800;color:var(--a);font-size:34px">{i+1}</span><span><b>{t}</b><br><span class="mute" style="font-size:22px">{s}</span></span></div>'
@@ -86,9 +86,9 @@ def bridge_scene(sid, n, total, parts, before, case, part="Part 1", lang="de", c
 '''
 
 
-def recap_scene(sid, part, title, cards, mnemonics=None, end_text=None, lang="de"):
+def recap_scene(sid, part, title, cards, mnemonics=None, end_text=None, lang="en"):
     """cards=[(color_class, heading, [bullets])]  mnemonics=[str]"""
-    lb = L[lang]
+    lb = L.get(lang, L["en"])
     n = len(cards); w = int((1728 - 24 * (n - 1)) / n)
     cmap = {"cc": "c", "ca": "a", "cb": "b", "cd": "d", "ce": "e", "cok": "ok"}
     cs = "".join(

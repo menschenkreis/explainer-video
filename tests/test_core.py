@@ -85,5 +85,30 @@ class Pipeline(unittest.TestCase):
         self.assertTrue((d / "site/c/v/index.html").exists()); self.assertTrue((d / "site/cards.html").exists())
 
 
+class Launcher(unittest.TestCase):
+    """`ev` must find scripts/ when reached through symlinks or the install.sh wrapper (bug report: ~/.local/bin symlink)."""
+    def test_symlinked_launcher(self):
+        d = Path(tempfile.mkdtemp()); (d / "bin").mkdir()
+        (d / "bin/ev").symlink_to(ROOT / "ev"); (d / "ev2").symlink_to(d / "bin/ev")       # chain of symlinks
+        for exe in (d / "bin/ev", d / "ev2"):
+            r = subprocess.run([str(exe), "--help"], capture_output=True, text=True, cwd=d)
+            self.assertEqual(r.returncode, 0, r.stderr); self.assertIn("explainer-video", r.stdout)
+
+    def test_install_does_not_touch_shell_rc(self):
+        home = Path(tempfile.mkdtemp())
+        env = {**os.environ, "HOME": str(home), "SHELL": "/bin/zsh", "PATH": "/usr/bin:/bin", "EV_VENV": str(home / "venv")}
+        r = subprocess.run(["bash", str(ROOT / "install.sh"), "--no-setup"], capture_output=True, text=True, env=env, stdin=subprocess.DEVNULL)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertFalse((home / ".zshrc").exists(), "install.sh edited the shell rc without consent")
+        self.assertIn("export PATH=", r.stdout)
+        w = home / ".local/bin/ev"; self.assertFalse(w.is_symlink())
+        r = subprocess.run([str(w), "--help"], capture_output=True, text=True, env=env); self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertTrue((home / ".claude/skills/explainer-video").is_symlink())
+        r = subprocess.run(["bash", str(ROOT / "install.sh"), "--no-setup", "--yes"], capture_output=True, text=True, env=env)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr); self.assertIn(".local/bin", (home / ".zshrc").read_text())
+        r = subprocess.run(["bash", str(ROOT / "install.sh"), "--no-setup", "--yes"], capture_output=True, text=True, env=env)
+        self.assertEqual((home / ".zshrc").read_text().count("explainer-video"), 1)   # idempotent
+
+
 if __name__ == "__main__":
     unittest.main()
