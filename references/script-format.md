@@ -10,6 +10,7 @@ stability: 0.5                     # 0–1, lower = more expressive
 similarity: 0.75
 style: 0
 speed: 1.0                         # optional, 0.7–1.2
+seed: 271828                       # optional; default = the seed remembered for this voice (see below), `none` = off
 cps: 15                            # optional: chars/second for --estimate (default per lang)
 lead: 0.7                          # silence before each scene's speech (visuals appear first)
 gap: 0.7                           # silence after each scene
@@ -41,3 +42,18 @@ Put directions in curly braces; they are sent to the API as `[tag]`, never shown
 Useful tags: `{excited}` `{curious}` `{sarcastic}` `{whispers}` `{laughs}` `{sighs}` `{dramatic}` `{confident}` `{warmly}`.
 Use them sparingly (every 1–3 sentences), write short sentences, use `...` for beats. Recommended: `stability: 0.0` (creative) or `0.5`
 (natural). v3 ignores `style`/`speed` partly and rejects `previous_text`/`next_text` (handled automatically).
+
+## Seed – the same narrator sounds the same every time
+
+`narrate.py` sends an ElevenLabs `seed` with every generation and **remembers it per voice** in
+`~/.config/explainer-video/narrators.json` (override the path with `EV_NARRATORS`):
+
+1. `--seed N` or `seed: N` in the front matter wins (and is remembered if the voice has no seed yet),
+2. otherwise the seed remembered for this `voice_id` is used,
+3. otherwise a new random seed is picked and remembered on the first real (non-estimate) generation.
+
+`seed: none` switches seeding off for one script; `narrate.py --forget-seed` drops the remembered seed of the voice.
+The seed used is printed and written to `build/timing.json`. Changing the seed re-synthesises scenes, but audio that was
+cached **before** seeding existed is still reused, so turning this on never silently re-bills finished videos.
+Anything else you narrate with the same voice (quiz prompts, feedback clips) should read the same file and send the same seed.
+

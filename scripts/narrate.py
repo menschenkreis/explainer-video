@@ -19,8 +19,14 @@ visuals can be built and checked before spending any credits.
 
 API key: env ELEVENLABS_API_KEY, or a line ELEVENLABS_API_KEY=... in ./.env or
 ~/.config/explainer-video/.env.  The key is never printed or written to the output.
+
+Seed (consistent voice across videos): every generation sends a seed. The seed is remembered per
+voice in ~/.config/explainer-video/narrators.json, so the same narrator always uses the same seed.
+Order: --seed / front matter `seed:` > remembered seed for this voice > a new random seed, which is
+then remembered.  `seed: none` turns seeding off for a script, --forget-seed drops the remembered one.
+Audio cached from before seeding (no seed in its cache key) is reused, never silently re-billed.
 """
-import argparse, base64, hashlib, json, os, re, shutil, subprocess, sys, urllib.error, urllib.request
+import argparse, base64, datetime, hashlib, json, os, random, re, shutil, subprocess, sys, urllib.error, urllib.request
 from pathlib import Path
 
 API = os.environ.get("ELEVENLABS_API_BASE", "https://api.elevenlabs.io/v1")   # override only for tests (mock_elevenlabs.py)
@@ -134,8 +140,41 @@ def list_voices(key):
         print(f'{v["voice_id"]}  {v["name"]:<24} {lab.get("gender","")}/{lab.get("accent","")}/{lab.get("use_case","")}  {v.get("category","")}')
 
 
-def synth(text, voice, model, settings, key, prev, nxt):
+# ---------------------------------------------------------------- narrator seed memory
+NARRATORS = Path(os.environ.get("EV_NARRATORS", Path.home() / ".config/explainer-video/narrators.json"))
+
+
+def load_narrators():
+    try:
+        return json.loads(NARRATORS.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def remember_seed(voice, seed, model):
+    data = load_narrators()
+    data[voice] = {**data.get(voice, {}), "seed": seed, "model": model, "since": datetime.date.today().isoformat()}
+    NARRATORS.parent.mkdir(parents=True, exist_ok=True)
+    NARRATORS.write_text(json.dumps(data, indent=2) + "\n")
+
+
+def resolve_seed(cli, meta, voice):
+    """-> (seed or None, source, remember?)"""
+    explicit = cli if cli is not None else meta.get("seed")
+    if isinstance(explicit, str) and explicit.strip().lower() in ("none", "off", "random"):
+        return None, "off (seed: none)", False
+    known = load_narrators().get(voice or "", {}).get("seed")
+    if explicit not in (None, ""):
+        return int(explicit), "script/--seed", known is None
+    if known is not None:
+        return int(known), f"remembered for this voice ({NARRATORS})", False
+    return random.randint(1, 4294967295), "new – will be remembered for this voice", True
+
+
+def synth(text, voice, model, settings, key, prev, nxt, seed=None):
     body = {"text": text, "model_id": model, "voice_settings": settings}
+    if seed is not None:
+        body["seed"] = seed                       # same seed + same text/settings → as reproducible as ElevenLabs allows
     if model != "eleven_v3":                      # v3 rejects previous_text / next_text
         if prev: body["previous_text"] = prev
         if nxt: body["next_text"] = nxt
@@ -233,6 +272,8 @@ def main():
     ap.add_argument("--list-voices", action="store_true")
     ap.add_argument("--only", help="comma-separated scene ids to (re)generate; others must be cached")
     ap.add_argument("--dry-run", action="store_true", help="print what would be synthesised + character count, then stop")
+    ap.add_argument("--seed", type=int, help="ElevenLabs seed (overrides front matter / the remembered seed of this voice)")
+    ap.add_argument("--forget-seed", action="store_true", help="forget the remembered seed of this voice (the next run picks and remembers a new one)")
     a = ap.parse_args()
 
     if a.list_voices:
@@ -251,6 +292,11 @@ def main():
                 "style": float(meta.get("style", 0)), "use_speaker_boost": True}
     if "speed" in meta: settings["speed"] = float(meta["speed"])
     voice = a.voice or meta.get("voice_id") or os.environ.get("ELEVENLABS_VOICE_ID")
+    if a.forget_seed and voice:
+        data = load_narrators(); data.pop(voice, None)
+        NARRATORS.parent.mkdir(parents=True, exist_ok=True); NARRATORS.write_text(json.dumps(data, indent=2) + "\n")
+        print(f"forgot the remembered seed of voice {voice}")
+    seed, seed_src, seed_new = resolve_seed(a.seed, meta, voice)
 
     key = None
     if not a.estimate:
@@ -267,14 +313,22 @@ def main():
     for i, s in enumerate(scenes):
         s["prev"] = scenes[i - 1]["text"][-300:] if i else ""
         s["next"] = scenes[i + 1]["text"][:300] if i + 1 < len(scenes) else ""
-        h = hashlib.sha256(json.dumps([s["text"], voice, model, settings], sort_keys=True).encode()).hexdigest()[:16]
+        base = [s["text"], voice, model, settings]
+        h = hashlib.sha256(json.dumps(base + ([seed] if seed is not None else []), sort_keys=True).encode()).hexdigest()[:16]
         s["mp3"], s["json"] = cache / f'{s["id"]}-{h}.mp3', cache / f'{s["id"]}-{h}.json'
         s["cached"] = s["mp3"].exists() and s["json"].exists()
+        if not s["cached"] and seed is not None:          # audio made before seeding: keep using it, don't re-bill
+            hl = hashlib.sha256(json.dumps(base, sort_keys=True).encode()).hexdigest()[:16]
+            lm, lj = cache / f'{s["id"]}-{hl}.mp3', cache / f'{s["id"]}-{hl}.json'
+            if lm.exists() and lj.exists():
+                s["mp3"], s["json"], s["cached"] = lm, lj, True
         if not s["cached"] and not a.estimate and (only is None or s["id"] in only):
             todo_chars += len(s["text"])
     total = sum(len(s["text"]) for s in scenes)
     print(f"{len(scenes)} scenes, {total} characters total, {todo_chars} to synthesise now"
           f" ({'estimate mode' if a.estimate else 'ElevenLabs ' + model})")
+    if not a.estimate:
+        print(f"seed: {seed if seed is not None else '–'}  ({seed_src})")
     if a.dry_run:
         return
 
@@ -288,7 +342,10 @@ def main():
                 if only is not None and s["id"] not in only:
                     sys.exit(f'scene {s["id"]} is not cached; run without --only first')
                 print(f'  synthesising {s["id"]} ({len(s["text"])} chars)…', flush=True)
-                audio, al = synth(s["text"], voice, model, settings, key, s["prev"], s["next"])
+                if seed_new:                              # remember on the first real generation, not on estimates/dry runs
+                    remember_seed(voice, seed, model); seed_new = False
+                    print(f"  remembered seed {seed} for voice {voice} in {NARRATORS}")
+                audio, al = synth(s["text"], voice, model, settings, key, s["prev"], s["next"], seed)
                 s["mp3"].write_bytes(audio); s["json"].write_text(json.dumps(al))
             al = json.loads(s["json"].read_text())
             dur = ffprobe_dur(s["mp3"])
@@ -327,6 +384,7 @@ def main():
             old.unlink()          # stale audio from an earlier real run would desync the estimated timeline
 
     timing = {"mode": "estimate" if a.estimate else "elevenlabs", "title": meta.get("title", ""), "lang": meta.get("lang", "en"),
+              "seed": None if a.estimate else seed,
               "duration": round(t0, 3), "audio": audio_name, "order": [s["id"] for s in scenes],
               "scenes": timeline, "cues": cues, "captions": caps}
     (out / "build").mkdir(exist_ok=True)
