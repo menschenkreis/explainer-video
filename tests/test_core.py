@@ -46,7 +46,8 @@ class Pipeline(unittest.TestCase):
     def test_mock_elevenlabs_roundtrip(self):
         from mock_elevenlabs import H
         srv = HTTPServer(("127.0.0.1", 0), H); threading.Thread(target=srv.serve_forever, daemon=True).start()
-        p = self.project(); env = dict(os.environ, ELEVENLABS_API_BASE=f"http://127.0.0.1:{srv.server_port}/v1", ELEVENLABS_API_KEY="test")
+        p = self.project(); env = dict(os.environ, ELEVENLABS_API_BASE=f"http://127.0.0.1:{srv.server_port}/v1", ELEVENLABS_API_KEY="test",
+                                       EV_NARRATORS=str(p / "narrators.json"))      # never touch the user's real seed memory
         try:
             r = self.run_py("narrate.py", "script.md", "--voice", "mock", cwd=p, env=env); self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         finally:
@@ -54,6 +55,44 @@ class Pipeline(unittest.TestCase):
         t = json.loads((p / "build/timing.json").read_text()); self.assertEqual(t["mode"], "elevenlabs")
         dur = float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(p / "narration.mp3")]))
         self.assertAlmostEqual(dur, t["duration"], delta=0.25)
+
+    @unittest.skipUnless(shutil.which("ffmpeg"), "ffmpeg missing")
+    def test_seed_is_sent_and_remembered_per_voice(self):
+        import mock_elevenlabs
+        seen = []
+        class Spy(mock_elevenlabs.H):
+            def do_POST(self):
+                n = int(self.headers["Content-Length"]); raw = self.rfile.read(n); seen.append(json.loads(raw).get("seed"))
+                import io; self.rfile = io.BytesIO(raw); super().do_POST()
+        srv = HTTPServer(("127.0.0.1", 0), Spy); threading.Thread(target=srv.serve_forever, daemon=True).start()
+        p = self.project(); mem = p / "narrators.json"
+        env = dict(os.environ, ELEVENLABS_API_BASE=f"http://127.0.0.1:{srv.server_port}/v1", ELEVENLABS_API_KEY="test", EV_NARRATORS=str(mem))
+        try:
+            r = self.run_py("narrate.py", "script.md", "--voice", "mock", cwd=p, env=env); self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            first = json.loads(mem.read_text())["mock"]["seed"]                       # picked and remembered
+            self.assertTrue(seen and all(s == first for s in seen))
+            self.assertEqual(json.loads((p / "build/timing.json").read_text())["seed"], first)
+            n = len(seen); r = self.run_py("narrate.py", "script.md", "--voice", "mock", cwd=p, env=env)
+            self.assertEqual(len(seen), n, "re-run must come from the cache")
+            (p / "build").rename(p / "build_old"); seen.clear()                      # same voice, fresh project → same seed
+            r = self.run_py("narrate.py", "script.md", "--voice", "mock", cwd=p, env=env); self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertTrue(seen and all(s == first for s in seen))
+            seen.clear(); shutil.rmtree(p / "build")
+            r = self.run_py("narrate.py", "script.md", "--voice", "mock", "--seed", "42", cwd=p, env=env)
+            self.assertTrue(seen and all(s == 42 for s in seen)); self.assertEqual(json.loads(mem.read_text())["mock"]["seed"], first)
+        finally:
+            srv.shutdown()
+
+    def test_seed_resolution(self):
+        os.environ["EV_NARRATORS"] = str(Path(tempfile.mkdtemp()) / "n.json")
+        try:
+            import importlib; nr = importlib.reload(narrate)
+            self.assertEqual(nr.resolve_seed(None, {"seed": "none"}, "v")[0], None)
+            self.assertEqual(nr.resolve_seed(7, {"seed": "3"}, "v")[:1], (7,))
+            s, _, new = nr.resolve_seed(None, {}, "v"); self.assertTrue(new and 1 <= s <= 4294967295)
+            nr.remember_seed("v", 99, "eleven_v3"); self.assertEqual(nr.resolve_seed(None, {}, "v")[:1], (99,))
+        finally:
+            os.environ.pop("EV_NARRATORS", None); importlib.reload(narrate)
 
     def test_ingest_and_plan(self):
         import zipfile

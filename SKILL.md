@@ -60,6 +60,10 @@ ElevenLabs key: environment variable `ELEVENLABS_API_KEY`, or a line `ELEVENLABS
 Pick a voice with `python3 $EV/narrate.py --list-voices`, put `voice_id:` in the script front matter
 (or `ELEVENLABS_VOICE_ID`). Let the user choose by ear before spending a whole video on it
 (`--only <scene>` renders a single scene).
+**Seed:** the narration sends an ElevenLabs seed and remembers it per voice in `~/.config/explainer-video/narrators.json`,
+so one narrator keeps one seed across videos (and across extra clips such as quiz prompts – reuse the same seed there).
+If the user asks for "the same seed as last time", read it from that file; `seed:` in the front matter or `--seed` overrides,
+`seed: none` turns it off (`references/script-format.md`).
 
 ## Workflow
 1. **Scaffold** `python3 $EV/new_project.py videos/<slug> "<Title>"` (script.md + a sample scene).
